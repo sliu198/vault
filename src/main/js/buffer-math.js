@@ -117,11 +117,11 @@ exports.mod = function(a,n) {
     let o = Buffer.alloc(al);
     a.copy(o);
 
-    let t = Buffer.alloc(al);
-    n.copy(t);
-
     let s = Array(8).fill().map(function(_,i) {
-        return exports.mul(t,Buffer.alloc(1,1 << i));
+        let bitShifted =  exports.mul(n,Buffer.alloc(1,1 << i));
+        let byteShifted = Buffer.alloc(bitShifted.length + al - nl);
+        bitShifted.copy(byteShifted);
+        return byteShifted;
     });
     for (let i = 0; i <= al - nl; i++) {
         for (let j = 7; j >= 0; j--) {
