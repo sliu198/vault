@@ -50,7 +50,6 @@ exports.sub = function(a,b) {
 
     let al = a.length;
     let bl = b.length;
-    let ol = al + 1;
 
     let e_msg = "first operand in subtraction must be larger than second operand";
 
@@ -58,12 +57,25 @@ exports.sub = function(a,b) {
         throw new Error(e_msg);
     }
 
-    let o = Buffer.alloc(ol);
-    a.copy(o,1);
+    let o = Buffer.alloc(al);
+    let borrow = false;
+    for (let i = 0; i < al; i ++) {
+        let av = i < al ? a.readUInt8(al - i - 1) : 0;
+        let bv = i < bl ? b.readUInt8(bl - i - 1) : 0;
+        let ov = av - bv - borrow;
 
-    for (let i = 0; i < ol - 1; i ++) {
-
+        if (ov < 0) {
+            ov += 256;
+            borrow = true;
+        } else {
+            borrow = false;
+        }
+        o.writeUInt8(ov,al - i - 1);
     }
+    if (borrow) {
+        throw new Error(e_msg);
+    }
+    return simplify(o);
 };
 
 exports.mul = function(a,b) {

@@ -18,6 +18,25 @@ describe("buffer-math", function() {
         }
     });
 
+    it("sub", function() {
+        for (let i = 0; i < 100; i++) {
+            let a = crypto.randomBytes(4);
+            let b = crypto.randomBytes(4);
+            let actual = a.readUInt32BE(0) - b.readUInt32BE(0);
+
+            try {
+                let o = bmath.sub(a,b);
+                assert.strictEqual(actual >= 0, true);
+                assert.strictEqual(o.readUIntBE(0,o.length), actual);
+                if (actual !== 0) {
+                    assert.notEqual(o.readUInt8(0), 0);
+                }
+            } catch (e) {
+                assert.strictEqual(actual < 0, true);
+            }
+        }
+    });
+
     it("mul", function() {
         for (let i = 0; i < 100; i++) {
             let a = crypto.randomBytes(2);
