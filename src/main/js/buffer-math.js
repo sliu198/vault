@@ -18,6 +18,22 @@ let simplify = function(b) {
     return Buffer.alloc(1);
 };
 
+let add = function(buf, offset, x) {
+    if (offset < 0 || offset >= buf.length) {
+        throw new Error("Buffer offset out of bounds");
+    }
+    let v = buf.readUInt8(offset) + x;
+    let q = Math.floor(v / 256);
+    let r = v % 256;
+    if (r < 0) {
+        r += 256;
+    }
+    buf.writeUInt8(r,offset);
+    if (q) {
+        add(buf, offset - 1, q);
+    }
+};
+
 exports.add = function(a,b) {
     assert_buffer(a);
     assert_buffer(b);
@@ -30,12 +46,9 @@ exports.add = function(a,b) {
     let ol = Math.max(al,bl) + 1;
 
     let o = Buffer.alloc(ol);
-    for (let i = 0; i < ol - 1; i++) {
-        let av = i < al ? a.readUInt8(al - i - 1) : 0;
-        let bv = i < bl ? b.readUInt8(bl - i - 1) : 0;
-        let ov = o.readUInt8(ol - i - 1) + av + bv;
-
-        o.writeUInt16BE(ov, ol - i - 2);
+    a.copy(o,ol - al);
+    for (let i = 0; i < bl; i++) {
+        add(o,ol - bl + i, b.readUInt8(i))
     }
 
     return simplify(o);
@@ -52,30 +65,20 @@ exports.sub = function(a,b) {
     let bl = b.length;
 
     let e_msg = "first operand in subtraction must be larger than second operand";
-
     if (al < bl) {
         throw new Error(e_msg);
     }
 
     let o = Buffer.alloc(al);
-    let borrow = false;
-    for (let i = 0; i < al; i ++) {
-        let av = i < al ? a.readUInt8(al - i - 1) : 0;
-        let bv = i < bl ? b.readUInt8(bl - i - 1) : 0;
-        let ov = av - bv - borrow;
-
-        if (ov < 0) {
-            ov += 256;
-            borrow = true;
-        } else {
-            borrow = false;
+    a.copy(o);
+    try {
+        for (let i = 0; i < bl; i++) {
+            add(o, al - bl + i, -b.readUInt8(i))
         }
-        o.writeUInt8(ov,al - i - 1);
-    }
-    if (borrow) {
+        return simplify(o);
+    } catch (e) {
         throw new Error(e_msg);
     }
-    return simplify(o);
 };
 
 exports.mul = function(a,b) {
@@ -88,15 +91,13 @@ exports.mul = function(a,b) {
     let al = a.length;
     let bl = b.length;
 
-    let o = Buffer.alloc(0);
+    let o = Buffer.alloc(al + bl);
 
     for (let i = 0; i < al; i++) {
-        let av = a.readUInt8(al - i - 1);
+        let av = a.readUInt8(i);
         for (let j = 0; j < bl; j++) {
-            let bv = b.readUInt8(bl - j - 1);
-            let t = Buffer.alloc(2 + i + j);
-            t.writeUInt16BE(av * bv, 0);
-            o = exports.add(o,t);
+            let bv = b.readUInt8(j);
+            add(o, i + j + 1, av * bv);
         }
     }
 
@@ -116,15 +117,16 @@ exports.mod = function(a,n) {
     let o = Buffer.alloc(al);
     a.copy(o);
 
+    let t = Buffer.alloc(al);
+    n.copy(t);
+
+    let s = Array(8).fill().map(function(_,i) {
+        return exports.mul(t,Buffer.alloc(1,1 << i));
+    });
     for (let i = 0; i <= al - nl; i++) {
-        let t = Buffer.alloc(al - i);
-        n.copy(t);
         for (let j = 7; j >= 0; j--) {
-            let u = Buffer.alloc(1);
-            u.writeUInt8(1 << j, 0);
-            u = exports.mul(t,u);
             try {
-                o = exports.sub(o,u);
+                o = exports.sub(o,s[j].slice(0,s[j].length - i));
             } catch (e) {}
         }
     }
@@ -139,6 +141,12 @@ exports.exp_mod = function(a,b,n) {
 
     n = simplify(n);
     a = exports.mod(simplify(a),n);
-    b = exports.mod(simplify(b),n);
+    b = simplify(b);
 
+
+    let t = Buffer.alloc(1);
+    t.writeUInt8(0,1);
+    for (let i = 0; i < b.length; i++) {
+
+    }
 };
