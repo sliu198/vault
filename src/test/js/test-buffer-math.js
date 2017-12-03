@@ -24,7 +24,7 @@ describe("buffer-math", function() {
             let b = crypto.randomBytes(2);
             let o = bmath.mul(a,b);
 
-            let actual = a.readUInt16BE(0) + b.readUInt16BE(0);
+            let actual = a.readUInt16BE(0) * b.readUInt16BE(0);
             assert.strictEqual(o.readUIntBE(0,o.length), actual);
             if (actual !== 0) {
                 assert.notEqual(o.readUInt8(0), 0);

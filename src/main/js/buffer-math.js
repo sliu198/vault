@@ -75,7 +75,6 @@ exports.mul = function(a,b) {
 
     let al = a.length;
     let bl = b.length;
-    let ol = al + bl;
 
     let o = Buffer.alloc(0);
 
@@ -83,9 +82,9 @@ exports.mul = function(a,b) {
         let av = a.readUInt8(al - i - 1);
         for (let j = 0; j < bl; j++) {
             let bv = b.readUInt8(bl - j - 1);
-            let t = Buffer.alloc();
-            t.writeUInt16BE(ov, ol - i - j - 2);
-            o = o.exp
+            let t = Buffer.alloc(2 + i + j);
+            t.writeUInt16BE(av * bv, 0);
+            o = exports.add(o,t);
         }
     }
 
