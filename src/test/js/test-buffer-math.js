@@ -50,4 +50,18 @@ describe("buffer-math", function() {
             }
         }
     });
+
+    it("mod", function() {
+        for (let i = 0; i < 100; i++) {
+            let a = crypto.randomBytes(4);
+            let n = crypto.randomBytes(2);
+            let o = bmath.mod(a,n);
+
+            let actual = a.readUInt32BE(0) % n.readUInt16BE(0);
+            assert.strictEqual(o.readUIntBE(0,o.length), actual);
+            if (actual !== 0) {
+                assert.notEqual(o.readUInt8(0), 0);
+            }
+        }
+    });
 });

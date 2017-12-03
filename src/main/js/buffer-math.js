@@ -112,13 +112,21 @@ exports.mod = function(a,n) {
 
     let al = a.length;
     let nl = n.length;
-    let ol = al + 1;
 
-    let o = Buffer.alloc(ol);
-    a.copy(o,1);
+    let o = Buffer.alloc(al);
+    a.copy(o);
 
-    for (let i = 1; i <= ol - nl; i++) {
-
+    for (let i = 0; i <= al - nl; i++) {
+        let t = Buffer.alloc(al - i);
+        n.copy(t);
+        for (let j = 7; j >= 0; j--) {
+            let u = Buffer.alloc(1);
+            u.writeUInt8(1 << j, 0);
+            u = exports.mul(t,u);
+            try {
+                o = exports.sub(o,u);
+            } catch (e) {}
+        }
     }
 
     return simplify(o);
@@ -128,4 +136,9 @@ exports.exp_mod = function(a,b,n) {
     assert_buffer(a);
     assert_buffer(b);
     assert_buffer(n);
+
+    n = simplify(n);
+    a = exports.mod(simplify(a),n);
+    b = exports.mod(simplify(b),n);
+
 };
