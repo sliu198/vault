@@ -10,9 +10,9 @@ describe("buffer-math", function() {
             let b = crypto.randomBytes(4);
             let o = bmath.add(a,b);
 
-            let actual = a.readUInt32BE(0) + b.readUInt32BE(0);
-            assert.strictEqual(o.readUIntBE(0,o.length), actual);
-            if (actual !== 0) {
+            let expected = a.readUInt32BE(0) + b.readUInt32BE(0);
+            assert.strictEqual(o.readUIntBE(0,o.length), expected);
+            if (expected !== 0) {
                 assert.notEqual(o.readUInt8(0), 0);
             }
         }
@@ -22,17 +22,17 @@ describe("buffer-math", function() {
         for (let i = 0; i < 100; i++) {
             let a = crypto.randomBytes(4);
             let b = crypto.randomBytes(4);
-            let actual = a.readUInt32BE(0) - b.readUInt32BE(0);
+            let expected = a.readUInt32BE(0) - b.readUInt32BE(0);
 
             try {
                 let o = bmath.sub(a,b);
-                assert(actual >= 0);
-                assert.strictEqual(o.readUIntBE(0,o.length), actual);
-                if (actual !== 0) {
+                assert(expected >= 0);
+                assert.strictEqual(o.readUIntBE(0,o.length), expected);
+                if (expected !== 0) {
                     assert.notEqual(o.readUInt8(0), 0);
                 }
             } catch (e) {
-                assert(actual < 0);
+                assert(expected < 0);
             }
         }
     });
@@ -43,9 +43,9 @@ describe("buffer-math", function() {
             let b = crypto.randomBytes(2);
             let o = bmath.mul(a,b);
 
-            let actual = a.readUInt16BE(0) * b.readUInt16BE(0);
-            assert.strictEqual(o.readUIntBE(0,o.length), actual);
-            if (actual !== 0) {
+            let expected = a.readUInt16BE(0) * b.readUInt16BE(0);
+            assert.strictEqual(o.readUIntBE(0,o.length), expected);
+            if (expected !== 0) {
                 assert.notEqual(o.readUInt8(0), 0);
             }
         }
@@ -57,9 +57,9 @@ describe("buffer-math", function() {
             let n = crypto.randomBytes(2);
             let o = bmath.mod(a,n);
 
-            let actual = a.readUInt32BE(0) % n.readUInt16BE(0);
-            assert.strictEqual(o.readUIntBE(0,o.length), actual);
-            if (actual !== 0) {
+            let expected = a.readUInt32BE(0) % n.readUInt16BE(0);
+            assert.strictEqual(o.readUIntBE(0,o.length), expected);
+            if (expected !== 0) {
                 assert.notEqual(o.readUInt8(0), 0);
             }
         }
