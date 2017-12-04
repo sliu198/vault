@@ -26,13 +26,13 @@ describe("buffer-math", function() {
 
             try {
                 let o = bmath.sub(a,b);
-                assert.strictEqual(actual >= 0, true);
+                assert(actual >= 0);
                 assert.strictEqual(o.readUIntBE(0,o.length), actual);
                 if (actual !== 0) {
                     assert.notEqual(o.readUInt8(0), 0);
                 }
             } catch (e) {
-                assert.strictEqual(actual < 0, true);
+                assert(actual < 0);
             }
         }
     });
@@ -62,6 +62,22 @@ describe("buffer-math", function() {
             if (actual !== 0) {
                 assert.notEqual(o.readUInt8(0), 0);
             }
+        }
+    });
+
+    it("exp_mod", function() {
+        for (let i = 0; i < 100; i++) {
+            let a = Buffer.alloc(4);
+            a.writeUInt32BE(2790,0);
+            let b = Buffer.alloc(4);
+            b.writeUInt32BE(413,0);
+            let n = Buffer.alloc(4);
+            n.writeUInt32BE(3233,0);
+
+            let o = bmath.exp_mod(a,b,n);
+
+            assert.strictEqual(o.readUIntBE(0,o.length), 65);
+            assert.notEqual(o.readUInt8(0), 0);
         }
     });
 });

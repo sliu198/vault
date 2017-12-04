@@ -2,7 +2,7 @@
 let assert = require('assert');
 
 let assert_buffer = function(o) {
-    return assert.strictEqual(o instanceof Buffer, true);
+    return assert(o instanceof Buffer);
 };
 
 /*
@@ -28,10 +28,10 @@ let add = function(buf, offset, x) {
     if (r < 0) {
         r += 256;
     }
-    buf.writeUInt8(r,offset);
     if (q) {
         add(buf, offset - 1, q);
     }
+    buf.writeUInt8(r,offset);
 };
 
 exports.add = function(a,b) {
@@ -104,6 +104,32 @@ exports.mul = function(a,b) {
     return simplify(o);
 };
 
+exports.shiftLeft = function(a,b) {
+    assert_buffer(a);
+    assert(typeof b === 'number');
+
+    a = simplify(a);
+
+    let bytes = Math.floor(b / 8);
+    let bits = b % 8;
+    if (bits < 0) {
+        bits += 8;
+    }
+
+    let al = a.length;
+    let ol = al + bytes + 1;
+
+    let o = Buffer.alloc(ol);
+    let next = 0;
+    for (let i = 0; i < ol; i++) {
+        let av = i < al ? a.readUInt8(i) : 0;
+        o.writeUInt8(next | (av >> (8 - bits)), i);
+        next = (av << bits) & 255;
+    }
+
+    return simplify(o);
+};
+
 exports.mod = function(a,n) {
     assert_buffer(a);
     assert_buffer(n);
@@ -118,10 +144,7 @@ exports.mod = function(a,n) {
     a.copy(o);
 
     let s = Array(8).fill().map(function(_,i) {
-        let bitShifted =  exports.mul(n,Buffer.alloc(1,1 << i));
-        let byteShifted = Buffer.alloc(bitShifted.length + al - nl);
-        bitShifted.copy(byteShifted);
-        return byteShifted;
+        return exports.shiftLeft(n,i + 8 * (al - nl));
     });
     for (let i = 0; i <= al - nl; i++) {
         for (let j = 7; j >= 0; j--) {
@@ -144,9 +167,18 @@ exports.exp_mod = function(a,b,n) {
     b = simplify(b);
 
 
-    let t = Buffer.alloc(1);
-    t.writeUInt8(0,1);
-    for (let i = 0; i < b.length; i++) {
-
+    let o = Buffer.alloc(1,1);
+    for (let i = b.length - 1; i >= 0; i--) {
+        let byte = b.readUInt8(i);
+        for (let j = 0; j < 8; j++) {
+            if ((byte >> j) & 1) {
+                o = exports.mod(exports.mul(o,a),n);
+            }
+            if (i !== 0) {
+                a = exports.mod(exports.mul(a,a),n);
+            }
+        }
     }
+
+    return o;
 };
