@@ -44,16 +44,16 @@ exports.salsa = function(in_buf) {
     in_buf.copy(x);
     for (let i = 8;i > 0;i -= 2) {
         salsaValues.forEach(function(v) {
-            let newX = x.readUInt32BE(v[0] * 4) ^ rotate(
-                x.readUInt32BE(v[1] * 4) + x.readUInt32BE(v[2] * 4),
+            let newX = x.readUInt32LE(v[0] * 4) ^ rotate(
+                x.readUInt32LE(v[1] * 4) + x.readUInt32LE(v[2] * 4),
                 v[3]
             );
-            x.writeUInt32BE(newX < 0 ? newX + 0x100000000 : newX, v[0] * 4);
+            x.writeUInt32LE(newX < 0 ? newX + 0x100000000 : newX, v[0] * 4);
         });
     }
     let out_buf = Buffer.alloc(64);
     for (let i = 0; i < 16; i++) {
-        out_buf.writeUInt32BE((x.readUInt32BE(i * 4) + in_buf.readUInt32BE(i * 4)) % 0x100000000,i * 4);
+        out_buf.writeUInt32LE((x.readUInt32LE(i * 4) + in_buf.readUInt32LE(i * 4)) % 0x100000000,i * 4);
     }
     return out_buf;
 };
