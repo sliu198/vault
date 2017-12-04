@@ -54,10 +54,10 @@ describe("buffer-math", function() {
     it("mod", function() {
         for (let i = 0; i < 100; i++) {
             let a = crypto.randomBytes(4);
-            let n = crypto.randomBytes(2);
+            let n = crypto.randomBytes(3);
             let o = bmath.mod(a,n);
 
-            let expected = a.readUInt32LE(0) % n.readUInt16LE(0);
+            let expected = a.readUInt32LE(0) % n.readUIntLE(0,n.length);
             assert.strictEqual(o.readUIntLE(0,o.length),expected);
             if (expected !== 0) {
                 assert.notEqual(o.readUInt8(o.length - 1), 0);
@@ -66,18 +66,16 @@ describe("buffer-math", function() {
     });
 
     it("exp_mod", function() {
-        for (let i = 0; i < 100; i++) {
-            let a = Buffer.alloc(4);
-            a.writeUInt32LE(2790,0);
-            let b = Buffer.alloc(4);
-            b.writeUInt32LE(413,0);
-            let n = Buffer.alloc(4);
-            n.writeUInt32LE(3233,0);
+        let a = Buffer.alloc(4);
+        a.writeUInt32LE(2790,0);
+        let b = Buffer.alloc(4);
+        b.writeUInt32LE(413,0);
+        let n = Buffer.alloc(4);
+        n.writeUInt32LE(3233,0);
 
-            let o = bmath.exp_mod(a,b,n);
+        let o = bmath.exp_mod(a,b,n);
 
-            assert.strictEqual(o.readUIntLE(0,o.length),65);
-            assert.notEqual(o.readUInt8(o.length - 1), 0);
-        }
+        assert.strictEqual(o.readUIntLE(0,o.length),65);
+        assert.notEqual(o.readUInt8(o.length - 1), 0);
     });
 });

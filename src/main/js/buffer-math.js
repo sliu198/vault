@@ -72,8 +72,7 @@ exports.sub = function(a,b) {
         throw new Error(e_msg);
     }
 
-    let o = Buffer.alloc(al);
-    a.copy(o);
+    let o = Buffer.alloc(al,a);
     try {
         for (let i = bl - 1; i >= 0; i--) {
             add(o, i, -b.readUInt8(i))
@@ -143,8 +142,7 @@ exports.mod = function(a,n) {
     let al = a.length;
     let nl = n.length;
 
-    let o = Buffer.alloc(al);
-    a.copy(o);
+    let o = Buffer.alloc(al,a);
 
     if (al - nl >= 0) {
         let s = new Array(8).fill(0).map(function(_,i) {
@@ -179,7 +177,7 @@ exports.exp_mod = function(a,b,n) {
             if ((byte >> j) & 1) {
                 o = exports.mod(exports.mul(o,a),n);
             }
-            if (i !== b.length - 1 || j !== 7) {
+            if (i !== b.length - 1 || (j !== 7 && (byte >> (j + 1)))) {
                 a = exports.mod(exports.mul(a,a),n);
             }
         }
