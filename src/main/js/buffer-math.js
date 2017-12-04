@@ -2,20 +2,23 @@
 let assert = require('assert');
 
 let assert_buffer = function(o) {
-    return assert(o instanceof Buffer);
+    return assert(Object.getPrototypeOf(o), Buffer.prototype);
 };
 
 /*
-This module interprets Buffers as big-endian encoded unsigned integers and performs basic arithmetic operations on them.
+This module interprets Buffers as little-endian encoded unsigned integers and performs basic arithmetic operations on them.
  */
 
 let simplify = function(b) {
-    for (let i = 0; i < b.length; i++) {
+    if (!b.length) {
+        return Buffer.alloc(1);
+    }
+    for (let i = b.length - 1; i >= 0; i--) {
         if (b.readUInt8(i)) {
-            return b.slice(i);
+            return b.slice(0,i + 1);
         }
     }
-    return Buffer.alloc(1);
+    return b.slice(0,1);
 };
 
 let add = function(buf, offset, x) {
@@ -29,7 +32,7 @@ let add = function(buf, offset, x) {
         r += 256;
     }
     if (q) {
-        add(buf, offset - 1, q);
+        add(buf, offset + 1, q);
     }
     buf.writeUInt8(r,offset);
 };
@@ -46,9 +49,9 @@ exports.add = function(a,b) {
     let ol = Math.max(al,bl) + 1;
 
     let o = Buffer.alloc(ol);
-    a.copy(o,ol - al);
+    a.copy(o);
     for (let i = 0; i < bl; i++) {
-        add(o,ol - bl + i, b.readUInt8(i))
+        add(o,i, b.readUInt8(i))
     }
 
     return simplify(o);
@@ -72,8 +75,8 @@ exports.sub = function(a,b) {
     let o = Buffer.alloc(al);
     a.copy(o);
     try {
-        for (let i = 0; i < bl; i++) {
-            add(o, al - bl + i, -b.readUInt8(i))
+        for (let i = bl - 1; i >= 0; i--) {
+            add(o, i, -b.readUInt8(i))
         }
         return simplify(o);
     } catch (e) {
@@ -97,7 +100,7 @@ exports.mul = function(a,b) {
         let av = a.readUInt8(i);
         for (let j = 0; j < bl; j++) {
             let bv = b.readUInt8(j);
-            add(o, i + j + 1, av * bv);
+            add(o, i + j, av * bv);
         }
     }
 
@@ -122,8 +125,8 @@ exports.shiftLeft = function(a,b) {
     let o = Buffer.alloc(ol);
     let next = 0;
     for (let i = 0; i < ol; i++) {
-        let av = i < al ? a.readUInt8(i) : 0;
-        o.writeUInt8(next | (av >> (8 - bits)), i);
+        let av = i < al ? a.readUInt8(al - i - 1) : 0;
+        o.writeUInt8(next | (av >> (8 - bits)), ol - i - 1);
         next = (av << bits) & 255;
     }
 
@@ -143,14 +146,16 @@ exports.mod = function(a,n) {
     let o = Buffer.alloc(al);
     a.copy(o);
 
-    let s = Array(8).fill().map(function(_,i) {
-        return exports.shiftLeft(n,i + 8 * (al - nl));
-    });
-    for (let i = 0; i <= al - nl; i++) {
-        for (let j = 7; j >= 0; j--) {
-            try {
-                o = exports.sub(o,s[j].slice(0,s[j].length - i));
-            } catch (e) {}
+    if (al - nl >= 0) {
+        let s = new Array(8).fill(0).map(function(_,i) {
+            return exports.shiftLeft(n,i + 8 * (al - nl));
+        });
+        for (let i = 0; i <= al - nl; i++) {
+            for (let j = 7; j >= 0; j--) {
+                try {
+                    o = exports.sub(o,s[j].slice(i,s[j].length));
+                } catch (e) {}
+            }
         }
     }
 
@@ -168,13 +173,13 @@ exports.exp_mod = function(a,b,n) {
 
 
     let o = Buffer.alloc(1,1);
-    for (let i = b.length - 1; i >= 0; i--) {
+    for (let i = 0; i < b.length; i++) {
         let byte = b.readUInt8(i);
         for (let j = 0; j < 8; j++) {
             if ((byte >> j) & 1) {
                 o = exports.mod(exports.mul(o,a),n);
             }
-            if (i !== 0) {
+            if (i !== b.length - 1 || j !== 7) {
                 a = exports.mod(exports.mul(a,a),n);
             }
         }
