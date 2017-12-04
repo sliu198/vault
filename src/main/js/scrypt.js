@@ -1,4 +1,6 @@
 "use strict";
+let assert = require('assert');
+let bmath = require('./buffer-math');
 
 let salsaValues = [
     [4,0,12,7],
@@ -40,6 +42,8 @@ let rotate = function(a,b) {
 };
 
 exports.salsa = function(in_buf) {
+    bmath.assert_buffer(in_buf);
+    assert.strictEqual(in_buf.length, 64);
     let x = Buffer.alloc(64);
     in_buf.copy(x);
     for (let i = 8;i > 0;i -= 2) {
@@ -58,15 +62,29 @@ exports.salsa = function(in_buf) {
     return out_buf;
 };
 
-let blockMix = function() {
+exports.blockMix = function(r, buf) {
+    assert(typeof r, 'number');
+    bmath.assert_buffer(buf);
+    assert.strictEqual(buf.length, 128 * r);
+
+    let x = buf.slice(64 * (2 * r - 1), 128 * r);
+    let y = Buffer.alloc(128 * r);
+    for (let i = 0; i < 2 * r; i++) {
+        let t = Buffer.alloc(64);
+        for (let j = 0; j < 64; j++) {
+            t.writeUInt8(x.readUInt8(j) ^ buf.readUInt8(64 * i + j),j)
+        }
+        x = exports.salsa(t);
+        x.copy(y, ((i & 1) * r + (i >> 1)) * 64);
+    }
+    return y;
+};
+
+exports.roMix = function() {
 
 };
 
-let roMix = function() {
-
-};
-
-let scrypt = function() {
+exports.scrypt = function() {
 
 };
 

@@ -1,7 +1,7 @@
 "use strict";
 let assert = require('assert');
 
-let assert_buffer = function(o) {
+exports.assert_buffer = function(o) {
     return assert(Object.getPrototypeOf(o), Buffer.prototype);
 };
 
@@ -38,8 +38,8 @@ let add = function(buf, offset, x) {
 };
 
 exports.add = function(a,b) {
-    assert_buffer(a);
-    assert_buffer(b);
+    exports.assert_buffer(a);
+    exports.assert_buffer(b);
 
     a = simplify(a);
     b = simplify(b);
@@ -58,8 +58,8 @@ exports.add = function(a,b) {
 };
 
 exports.sub = function(a,b) {
-    assert_buffer(a);
-    assert_buffer(b);
+    exports.assert_buffer(a);
+    exports.assert_buffer(b);
 
     a = simplify(a);
     b = simplify(b);
@@ -85,8 +85,8 @@ exports.sub = function(a,b) {
 };
 
 exports.mul = function(a,b) {
-    assert_buffer(a);
-    assert_buffer(b);
+    exports.assert_buffer(a);
+    exports.assert_buffer(b);
 
     a = simplify(a);
     b = simplify(b);
@@ -108,7 +108,7 @@ exports.mul = function(a,b) {
 };
 
 exports.shiftLeft = function(a,b) {
-    assert_buffer(a);
+    exports.assert_buffer(a);
     assert(typeof b === 'number');
 
     a = simplify(a);
@@ -134,8 +134,8 @@ exports.shiftLeft = function(a,b) {
 };
 
 exports.mod = function(a,n) {
-    assert_buffer(a);
-    assert_buffer(n);
+    exports.assert_buffer(a);
+    exports.assert_buffer(n);
 
     a = simplify(a);
     n = simplify(n);
@@ -163,9 +163,9 @@ exports.mod = function(a,n) {
 };
 
 exports.exp_mod = function(a,b,n) {
-    assert_buffer(a);
-    assert_buffer(b);
-    assert_buffer(n);
+    exports.assert_buffer(a);
+    exports.assert_buffer(b);
+    exports.assert_buffer(n);
 
     n = simplify(n);
     a = exports.mod(simplify(a),n);
