@@ -10,103 +10,115 @@ This module interprets Buffers as little-endian encoded unsigned integers and pe
  */
 
 let simplify = function(b) {
-    if (!b.length) {
-        return Buffer.alloc(1);
-    }
     for (let i = b.length - 1; i >= 0; i--) {
         if (b[i]) {
             return b.slice(0,i + 1);
         }
     }
-    return b.slice(0,1);
+    return b.slice(0,0);
 };
 
 let add = function(buf, offset, x) {
     if (offset < 0 || offset >= buf.length) {
-        throw new Error("Buffer offset out of bounds");
+        return;
     }
     let v = buf[offset] + x;
     let q = Math.floor(v / 256);
-    let r = v % 256;
-    if (r < 0) {
-        r += 256;
-    }
+    buf[offset] = v % 256;
     if (q) {
         add(buf, offset + 1, q);
     }
-    buf[offset] = r;
 };
 
-exports.add = function(a,b) {
+exports.add = function(a,b,o) {
     exports.assert_buffer(a);
     exports.assert_buffer(b);
+    exports.assert_buffer(o);
 
     a = simplify(a);
     b = simplify(b);
 
     let al = a.length;
     let bl = b.length;
-    let ol = Math.max(al,bl) + 1;
+    let ol = o.length;
 
-    let o = Buffer.alloc(ol);
-    a.copy(o);
-    for (let i = 0; i < bl; i++) {
-        add(o,i, b.readUInt8(i))
+    let y = Buffer.alloc(ol);
+    let m = Math.min(Math.max(al,bl),ol);
+    for (let i = 0; i < m; i++) {
+        add(y,i, (a[i] || 0) + (b[i] || 0));
     }
-
-    return simplify(o);
+    y.copy(o);
+    return o;
 };
 
-exports.sub = function(a,b) {
+exports.sub = function(a,b,o) {
     exports.assert_buffer(a);
     exports.assert_buffer(b);
+    exports.assert_buffer(o);
 
     a = simplify(a);
     b = simplify(b);
 
     let al = a.length;
     let bl = b.length;
+    let ol = o.length;
 
-    let e_msg = "first operand in subtraction must be larger than second operand";
+    let emsg = "first operand in subtraction must be larger than second operand";
     if (al < bl) {
-        throw new Error(e_msg);
+        throw new Error(emsg);
+    }
+    if (al === bl) {
+        for (let i = al - 1; i >= 0; i--) {
+            if (a[i] > b[i]) {
+                break;
+            }
+            if (a[i] < b[i]) {
+                throw new Error(emsg);
+            }
+        }
     }
 
-    let o = Buffer.alloc(al,a);
-    try {
-        for (let i = bl - 1; i >= 0; i--) {
-            add(o, i, -b[i]);
-        }
-        return simplify(o);
-    } catch (e) {
-        throw new Error(e_msg);
+    let y = Buffer.alloc(ol);
+    a.copy(y,0,0,Math.min(al,ol));
+    let m = Math.min(bl,ol);
+    for (let i = 0; i < m; i++) {
+        add(y, i, -b[i]);
     }
+    y.copy(o);
+    return o;
 };
 
-exports.mul = function(a,b) {
+exports.mul = function(a,b,o) {
     exports.assert_buffer(a);
     exports.assert_buffer(b);
+    exports.assert_buffer(o);
 
     a = simplify(a);
     b = simplify(b);
 
-    let al = a.length;
-    let bl = b.length;
+    let ol = o.length;
 
-    let o = Buffer.alloc(al + bl);
-
-    a.forEach(function(av, i) {
-        b.forEach(function(bv, j) {
-            add(o, i + j, av * bv);
-        });
-    });
-
-    return simplify(o);
+    let y = Buffer.alloc(ol);
+    for (let i = 0; i < a.length; i++) {
+        if (i >= ol) {
+            break;
+        }
+        let av = a[i];
+        for (let j = 0; j < b.length; j++) {
+            if (i + j >= ol) {
+                break;
+            }
+            add(y, i + j, av * b[j]);
+        }
+    }
+    y.copy(o);
+    return o;
 };
 
-exports.shiftLeft = function(a,b) {
+exports.shiftLeft = function(a,b,o) {
     exports.assert_buffer(a);
     assert(Number.isSafeInteger(b));
+    exports.assert_buffer(o);
 
     a = simplify(a);
 
@@ -117,69 +129,79 @@ exports.shiftLeft = function(a,b) {
     }
 
     let al = a.length;
-    let ol = al + bytes + 1;
+    let ol = o.length;
 
-    let o = Buffer.alloc(ol);
-    let next = 0;
-    for (let i = 0; i < ol; i++) {
-        let av = a[al - i - 1] || 0;
-        o[ol - i - 1] = next | (av >> (8 - bits));
-        next = (av << bits) & 255;
+    let y = Buffer.alloc(ol);
+    let m = Math.min(ol, al + b / 8);
+    for (let i = Math.max(0,bytes); i < m; i++) {
+        y[i] = (((a[i - bytes] || 0) << bits) | ((a[i - bytes - 1] || 0) >>> (8 - bits))) & 255;
     }
 
-    return simplify(o);
+    y.copy(o);
 };
 
-exports.mod = function(a,n) {
+exports.mod = function(a,n,o) {
     exports.assert_buffer(a);
     exports.assert_buffer(n);
+    exports.assert_buffer(o);
 
     a = simplify(a);
     n = simplify(n);
 
     let al = a.length;
     let nl = n.length;
+    let ol = n.length;
 
-    let o = Buffer.alloc(al,a);
-
+    let y = Buffer.alloc(al,a);
     if (al - nl >= 0) {
-        let s = new Array(8).fill(0).map(function(_,i) {
-            return exports.shiftLeft(n,i + 8 * (al - nl));
+        let l = Math.log2(n[nl - 1]);
+        let s = new Array(8).fill(0).map(function (_, i) {
+            let x = Buffer.alloc(al + (l + i >= 8));
+            exports.shiftLeft(n, i + 8 * (al - nl), x);
+            return x;
         });
         for (let i = 0; i <= al - nl; i++) {
             for (let j = 7; j >= 0; j--) {
                 try {
-                    o = exports.sub(o,s[j].slice(i,s[j].length));
+                    exports.sub(y, s[j].slice(i, s[j].length), y);
                 } catch (e) {}
             }
         }
     }
-
-    return simplify(o);
+    o.fill(0);
+    y.copy(o,0,0,Math.min(nl,ol));
+    return o;
 };
 
-exports.exp_mod = function(a,b,n) {
+
+exports.exp_mod = function(a,b,n,o) {
     exports.assert_buffer(a);
     exports.assert_buffer(b);
     exports.assert_buffer(n);
+    exports.assert_buffer(o);
 
     n = simplify(n);
-    a = exports.mod(simplify(a),n);
+    a = exports.mod(a,n,Buffer.alloc(n.length * 2));
     b = simplify(b);
 
 
-    let o = Buffer.alloc(1,1);
+    let y = Buffer.alloc(n.length * 2);
+    y[0] = 1;
     for (let i = 0; i < b.length; i++) {
         let byte = b[i];
         for (let j = 0; j < 8; j++) {
             if ((byte >> j) & 1) {
-                o = exports.mod(exports.mul(o,a),n);
+                exports.mul(y,a,y);
+                exports.mod(y,n,y);
             }
             if (i !== b.length - 1 || (j !== 7 && (byte >> (j + 1)))) {
-                a = exports.mod(exports.mul(a,a),n);
+                exports.mul(a,a,a);
+                exports.mod(a,n,a);
             }
         }
     }
 
+    o.fill(0);
+    y.copy(o,0,0,Math.min(y.length,o.length));
     return o;
 };

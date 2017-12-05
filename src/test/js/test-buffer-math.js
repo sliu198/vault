@@ -6,15 +6,13 @@ let bmath = require('../../main/js/buffer-math');
 describe("buffer-math", function() {
     it("add", function() {
         for (let i = 0; i < 100; i++) {
-            let a = crypto.randomBytes(4);
-            let b = crypto.randomBytes(4);
-            let o = bmath.add(a,b);
+            let a = crypto.randomBytes(1);
+            let b = crypto.randomBytes(1);
+            let o = Buffer.alloc(4);
+            bmath.add(a,b,o);
 
-            let expected = a.readUInt32LE(0) + b.readUInt32LE(0);
+            let expected = (a.readUInt8(0) + b.readUInt8(0)) % 0x100000000;
             assert.strictEqual(o.readUIntLE(0,o.length),expected);
-            if (expected !== 0) {
-                assert.notEqual(o[o.length - 1],0);
-            }
         }
     });
 
@@ -22,15 +20,13 @@ describe("buffer-math", function() {
         for (let i = 0; i < 100; i++) {
             let a = crypto.randomBytes(4);
             let b = crypto.randomBytes(4);
+            let o = Buffer.alloc(4);
             let expected = a.readUInt32LE(0) - b.readUInt32LE(0);
 
             try {
-                let o = bmath.sub(a,b);
+                bmath.sub(a,b,o);
                 assert(expected >= 0);
                 assert.strictEqual(o.readUIntLE(0,o.length),expected);
-                if (expected !== 0) {
-                    assert.notEqual(o[o.length - 1],0);
-                }
             } catch (e) {
                 assert(expected < 0);
             }
@@ -39,15 +35,13 @@ describe("buffer-math", function() {
 
     it("mul", function() {
         for (let i = 0; i < 100; i++) {
-            let a = crypto.randomBytes(2);
-            let b = crypto.randomBytes(2);
-            let o = bmath.mul(a,b);
+            let a = crypto.randomBytes(3);
+            let b = crypto.randomBytes(3);
+            let o = Buffer.alloc(4);
+            bmath.mul(a,b,o);
 
-            let expected = a.readUInt16LE(0) * b.readUInt16LE(0);
+            let expected = (a.readUIntLE(0,3) * b.readUIntLE(0,3)) % 0x100000000;
             assert.strictEqual(o.readUIntLE(0,o.length),expected);
-            if (expected !== 0) {
-                assert.notEqual(o[o.length - 1],0);
-            }
         }
     });
 
@@ -55,13 +49,11 @@ describe("buffer-math", function() {
         for (let i = 0; i < 100; i++) {
             let a = crypto.randomBytes(4);
             let n = crypto.randomBytes(3);
-            let o = bmath.mod(a,n);
+            let o = Buffer.alloc(2);
+            bmath.mod(a,n,o);
 
-            let expected = a.readUInt32LE(0) % n.readUIntLE(0,n.length);
+            let expected = (a.readUInt32LE(0) % n.readUIntLE(0,n.length)) % 0x10000;
             assert.strictEqual(o.readUIntLE(0,o.length),expected);
-            if (expected !== 0) {
-                assert.notEqual(o[o.length - 1],0);
-            }
         }
     });
 
@@ -72,10 +64,10 @@ describe("buffer-math", function() {
         b.writeUInt32LE(413,0);
         let n = Buffer.alloc(4);
         n.writeUInt32LE(3233,0);
+        let o = Buffer.alloc(4);
 
-        let o = bmath.exp_mod(a,b,n);
+        bmath.exp_mod(a,b,n,o);
 
         assert.strictEqual(o.readUIntLE(0,o.length),65);
-        assert.notEqual(o.readUInt8(o.length - 1), 0);
     });
 });
