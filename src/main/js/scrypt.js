@@ -73,7 +73,7 @@ exports.blockMix = function(r, B) {
         for (let j = 0; j < 16; j++) {
             B[b * 16 + j] = B[bPrev * 16 + j] ^ Y[i * 16 + j];
         }
-        exports.salsa(new Uint32Array(B.buffer, b * 64, 16));
+        exports.salsa(B.subarray(b * 16, (b + 1) * 16));
         bPrev = b;
     }
 };
@@ -81,25 +81,27 @@ exports.blockMix = function(r, B) {
 exports.roMix = function(r, B, lN) {
     //lN represents the log2(N); used to avoid checking if N is a power of 2
     assert(Number.isSafeInteger(r));
-    bmath.assert_buffer(B);
+    assertUint32Array(B);
     assert(Number.isSafeInteger(lN));
-    assert.strictEqual(B.length, r * 128);
+    assert.strictEqual(B.length, r * 32);
     //last restriction from limit of Buffer.alloc
     assert(lN > 0 && lN < 16 * r && lN + 7 + Math.log2(r) < 31);
 
 
     let N = Math.pow(2, lN);
-    let V = Buffer.alloc(r * 128 * N);
+    let V = new Uint32Array(r * 32 * N);
 
     for (let i = 0; i < N; i++) {
-        B.copy(V, r * 128 * i);
+        B.forEach(function(v,j) {
+            V[r * 32 * i + j] = v;
+        });
         exports.blockMix(r,B);
     }
 
     for (let i = 0; i < N; i++) {
-        let j = B.readUInt32LE(r * 128 - 64) % N;
+        let j = B[r * 32 - 16] % N;
         B.forEach(function(_, k) {
-            B[k] ^= V[r * 128 * j + k];
+            B[k] ^= V[r * 32 * j + k];
         });
         exports.blockMix(r,B);
     }
