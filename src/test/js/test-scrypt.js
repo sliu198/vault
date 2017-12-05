@@ -78,4 +78,40 @@ describe("scrypt",function() {
             assert.strictEqual(actual[i],v);
         });
     });
+
+    it("scrypt", function() {
+        this.timeout(0);
+        assert.strictEqual(
+            scrypt.scrypt("","",4, 1, 1, 64).toString('hex'),
+            "77d6576238657b203b19ca42c18a0497" +
+            "f16b4844e3074ae8dfdffa3fede21442" +
+            "fcd0069ded0948f8326a753a0fc81f17" +
+            "e8d3e0fb2e0d3628cf35e20c38d18906"
+        );
+
+        assert.strictEqual(
+            scrypt.scrypt("password","NaCl",10, 8, 16, 64).toString('hex'),
+            "fdbabe1c9d3472007856e7190d01e9fe" +
+            "7c6ad7cbc8237830e77376634b373162" +
+            "2eaf30d92e22a3886ff109279d9830da" +
+            "c727afb94a83ee6d8360cbdfa2cc0640"
+        );
+
+        assert.strictEqual(
+            scrypt.scrypt("pleaseletmein","SodiumChloride",14, 8, 1, 64).toString('hex'),
+            "7023bdcb3afd7348461c06cd81fd38eb" +
+            "fda8fbba904f8e3ea9b543f6545da1f2" +
+            "d5432955613f0fcf62d49705242a9af9" +
+            "e61e85dc0d651e40dfcf017b45575887"
+        );
+
+        // assert.strictEqual(
+        //     scrypt.scrypt("pleaseletmein","SodiumChloride",20, 8, 1, 64).toString('hex'),
+        //     "77d6576238657b203b19ca42c18a0497" +
+        //     "f16b4844e3074ae8dfdffa3fede21442" +
+        //     "fcd0069ded0948f8326a753a0fc81f17" +
+        //     "e8d3e0fb2e0d3628cf35e20c38d18906"
+        // );
+
+    }, 10);
 });

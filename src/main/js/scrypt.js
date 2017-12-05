@@ -1,5 +1,6 @@
 "use strict";
 let assert = require('assert');
+let crypto = require('crypto');
 let bmath = require('./buffer-math');
 
 let salsaValues = [
@@ -89,7 +90,7 @@ exports.roMix = function(r, B, lN) {
     assert(Number.isSafeInteger(lN));
     assert.strictEqual(B.length, r * 128);
     //last restriction from limit of Buffer.alloc
-    assert(lN > 0 && Number.isSafeInteger(lN) && lN < 16 * r && lN + 7 + Math.log2(r) < 31);
+    assert(lN > 0 && lN < 16 * r && lN + 7 + Math.log2(r) < 31);
 
 
     let N = Math.pow(2, lN);
@@ -112,7 +113,22 @@ exports.roMix = function(r, B, lN) {
     return X;
 };
 
-exports.scrypt = function() {
+exports.scrypt = function(password, salt, lN, r, p, dkLen) {
+    assert(Number.isSafeInteger(lN));
+    assert(Number.isSafeInteger(r));
+    assert(Number.isSafeInteger(p));
+    assert(Number.isSafeInteger(dkLen));
 
+    assert(lN > 0 && lN < 16 * r && lN + 7 + Math.log2(r) < 31);
+    assert(p <= 0xffffffff / (4 * r));
+    assert(dkLen <= 0xffffffff * 32);
+
+    let N = Math.pow(2,lN);
+
+    let B = crypto.pbkdf2Sync(password,salt,1,p * 128 * r,'sha256');
+    for (let i = 0; i < p; i++) {
+        exports.roMix(r,B.slice(128 * r * i, 128 * r * (i + 1)),lN).copy(B,128 * r * i);
+    }
+    return crypto.pbkdf2Sync(password, B, 1, dkLen, 'sha256');
 };
 
