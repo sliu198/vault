@@ -3,6 +3,7 @@ let assert = require('assert');
 global.sjcl = require('sjcl');
 require('sjcl/core/scrypt');
 
+
 describe("scrypt",function() {
     it('sjcl', function() {
         this.timeout(0);
