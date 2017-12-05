@@ -38,28 +38,26 @@ let salsaValues = [
     [15,14,13,18]
 ];
 
+let assertUint32Array = function(o) {
+    assert.strictEqual(Object.getPrototypeOf(o), Uint32Array.prototype);
+};
+
 let rotate = function(a,b) {
     return (a << b) | (a >>> (32 - b));
 };
 
 exports.salsa = function(in_buf) {
-    bmath.assert_buffer(in_buf);
-    assert.strictEqual(in_buf.length, 64);
+    assertUint32Array(in_buf);
+    assert.strictEqual(in_buf.length, 16);
 
-    let x = Buffer.alloc(64,in_buf);
+    let x = in_buf.slice(0);
     for (let i = 0; i < 4; i++) {
         salsaValues.forEach(function(v) {
-            x.writeInt32LE(
-                x.readInt32LE(v[0] * 4) ^ rotate(
-                    x.readUInt32LE(v[1] * 4) + x.readUInt32LE(v[2] * 4),
-                    v[3]
-                ),
-                v[0] * 4
-            );
+            x[v[0]] ^= rotate(x[v[1]] + x[v[2]], v[3]);
         });
     }
     for (let i = 0; i < 16; i++) {
-        in_buf.writeInt32LE((x.readUInt32LE(i * 4) + in_buf.readUInt32LE(i * 4)) << 0,i * 4);
+        in_buf[i] += x[i];
     }
 };
 
