@@ -60,13 +60,28 @@ describe("scrypt",function() {
             "21077cfe5f8d5fe2b1a4168f953678b7" +
             "7d3b3d803b60e4ab920996e59b4d53b6" +
             "5d2a225877d5edf5842cb9f14eefe425";
-        let inBuf = Buffer.alloc(128, inString, 'hex');
-        let outBuf = Buffer.alloc(128, outString, 'hex');
-        scrypt.blockMix(1, inBuf);
-        assert.strictEqual(inBuf.length, outBuf.length);
-        outBuf.forEach(function(v,i) {
-            assert.strictEqual(inBuf[i],v);
+        //inString and outString are little-endian int32. make sure stuff is aligned correctly
+        let inBuf8 = new Uint8Array(
+            inString.match(/[0-9a-fA-F]{1,2}/g).map(function(byte){
+                return Number.parseInt(byte.padEnd(2,'0'),16);
+            })
+        );
+        let inBuf32 = new Uint32Array(inBuf8.buffer);
+        let bufView = new DataView(inBuf8.buffer);
+        //endian correction in-place
+        inBuf32.forEach(function(_,i,b) {
+            b[i] = bufView.getUint32(i * 4, true);
         });
+        scrypt.blockMix(1,inBuf32);
+        //endian correction in-place
+        inBuf32.forEach(function(_,i,b) {
+            bufView.setUint32(i * 4, b[i], true);
+        });
+        let actual = new Array(inBuf8.length);
+        inBuf8.forEach(function(v,i) {
+            actual[i] = v.toString(16).padStart(2,'0');
+        });
+        assert.strictEqual(actual.join(''),outString);
     });
 
     it("roMix", function() {

@@ -63,17 +63,17 @@ exports.salsa = function(in_buf) {
 
 exports.blockMix = function(r, B) {
     assert(Number.isSafeInteger(r));
-    bmath.assert_buffer(B);
-    assert.strictEqual(B.length, 128 * r);
+    assertUint32Array(B);
+    assert.strictEqual(B.length, 32 * r);
 
-    let Y = Buffer.alloc(B.length, B);
-    let bPrev = B.length - 64;
+    let Y = B.slice(0);
+    let bPrev = 2 * r - 1;
     for (let i = 0; i < 2 * r; i++) {
-        let b = ((i & 1) * r + (i >> 1)) * 64;
-        for (let j = 0; j < 64; j++) {
-            B[b + j] = B[bPrev + j] ^ Y[64 * i + j];
+        let b = ((i & 1) * r + (i >> 1));
+        for (let j = 0; j < 16; j++) {
+            B[b * 16 + j] = B[bPrev * 16 + j] ^ Y[i * 16 + j];
         }
-        exports.salsa(B.slice(b, b + 64));
+        exports.salsa(new Uint32Array(B.buffer, b * 64, 16));
         bPrev = b;
     }
 };
