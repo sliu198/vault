@@ -138,6 +138,7 @@ exports.shiftLeft = function(a,b,o) {
     }
 
     y.copy(o);
+    return o;
 };
 
 exports.mod = function(a,n,o) {
