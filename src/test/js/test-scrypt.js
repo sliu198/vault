@@ -17,10 +17,10 @@ describe("scrypt",function() {
         let inBuf = Buffer.alloc(64, inString, 'hex');
         let outBuf = Buffer.alloc(64, outString, 'hex');
         let actual = scrypt.salsa(inBuf);
-        assert.strictEqual(actual.length, 64);
-        for (let i = 0; i < outBuf.length; i++) {
-            assert.strictEqual(outBuf.readUInt8(i), actual.readUInt8(i));
-        }
+        assert.strictEqual(actual.length, outBuf.length);
+        outBuf.forEach(function(v,i) {
+            assert.strictEqual(actual[i],v);
+        });
     });
 
     it("blockMix", function() {
@@ -45,9 +45,37 @@ describe("scrypt",function() {
         let inBuf = Buffer.alloc(128, inString, 'hex');
         let outBuf = Buffer.alloc(128, outString, 'hex');
         let actual = scrypt.blockMix(1, inBuf);
-        assert.strictEqual(actual.length, 128);
-        for (let i = 0; i < outBuf.length; i++) {
-            assert.strictEqual(outBuf.readUInt8(i), actual.readUInt8(i));
-        }
+        assert.strictEqual(actual.length, outBuf.length);
+        outBuf.forEach(function(v,i) {
+            assert.strictEqual(actual[i],v);
+        });
+    });
+
+    it("roMix", function() {
+        let inString =
+            "f7ce0b653d2d72a4108cf5abe912ffdd" +
+            "777616dbbb27a70e8204f3ae2d0f6fad" +
+            "89f68f4811d1e87bcc3bd7400a9ffd29" +
+            "094f0184639574f39ae5a1315217bcd7" +
+            "894991447213bb226c25b54da86370fb" +
+            "cd984380374666bb8ffcb5bf40c254b0" +
+            "67d27c51ce4ad5fed829c90b505a571b" +
+            "7f4d1cad6a523cda770e67bceaaf7e89";
+        let outString =
+            "79ccc193629debca047f0b70604bf6b6" +
+            "2ce3dd4a9626e355fafc6198e6ea2b46" +
+            "d58413673b99b029d665c357601fb426" +
+            "a0b2f4bba200ee9f0a43d19b571a9c71" +
+            "ef1142e65d5a266fddca832ce59faa7c" +
+            "ac0b9cf1be2bffca300d01ee387619c4" +
+            "ae12fd4438f203a0e4e1c47ec314861f" +
+            "4e9087cb33396a6873e8f9d2539a4b8e";
+        let inBuf = Buffer.alloc(128, inString, 'hex');
+        let outBuf = Buffer.alloc(128, outString, 'hex');
+        let actual = scrypt.roMix(1, inBuf, 4);
+        assert.strictEqual(actual.length, outBuf.length);
+        outBuf.forEach(function(v,i) {
+            assert.strictEqual(actual[i],v);
+        });
     });
 });

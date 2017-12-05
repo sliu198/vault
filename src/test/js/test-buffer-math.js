@@ -13,7 +13,7 @@ describe("buffer-math", function() {
             let expected = a.readUInt32LE(0) + b.readUInt32LE(0);
             assert.strictEqual(o.readUIntLE(0,o.length),expected);
             if (expected !== 0) {
-                assert.notEqual(o.readUInt8(o.length - 1),0);
+                assert.notEqual(o[o.length - 1],0);
             }
         }
     });
@@ -29,7 +29,7 @@ describe("buffer-math", function() {
                 assert(expected >= 0);
                 assert.strictEqual(o.readUIntLE(0,o.length),expected);
                 if (expected !== 0) {
-                    assert.notEqual(o.readUInt8(o.length - 1), 0);
+                    assert.notEqual(o[o.length - 1],0);
                 }
             } catch (e) {
                 assert(expected < 0);
@@ -46,7 +46,7 @@ describe("buffer-math", function() {
             let expected = a.readUInt16LE(0) * b.readUInt16LE(0);
             assert.strictEqual(o.readUIntLE(0,o.length),expected);
             if (expected !== 0) {
-                assert.notEqual(o.readUInt8(o.length - 1), 0);
+                assert.notEqual(o[o.length - 1],0);
             }
         }
     });
@@ -60,7 +60,7 @@ describe("buffer-math", function() {
             let expected = a.readUInt32LE(0) % n.readUIntLE(0,n.length);
             assert.strictEqual(o.readUIntLE(0,o.length),expected);
             if (expected !== 0) {
-                assert.notEqual(o.readUInt8(o.length - 1), 0);
+                assert.notEqual(o[o.length - 1],0);
             }
         }
     });
