@@ -16,10 +16,10 @@ describe("scrypt",function() {
             "e424cc102c91745c24ad673dc7618f81";
         let inBuf = Buffer.alloc(64, inString, 'hex');
         let outBuf = Buffer.alloc(64, outString, 'hex');
-        let actual = scrypt.salsa(inBuf);
-        assert.strictEqual(actual.length, outBuf.length);
+        scrypt.salsa(inBuf);
+        assert.strictEqual(inBuf.length, outBuf.length);
         outBuf.forEach(function(v,i) {
-            assert.strictEqual(actual[i],v);
+            assert.strictEqual(inBuf[i],v);
         });
     });
 
@@ -44,10 +44,10 @@ describe("scrypt",function() {
             "5d2a225877d5edf5842cb9f14eefe425";
         let inBuf = Buffer.alloc(128, inString, 'hex');
         let outBuf = Buffer.alloc(128, outString, 'hex');
-        let actual = scrypt.blockMix(1, inBuf);
-        assert.strictEqual(actual.length, outBuf.length);
+        scrypt.blockMix(1, inBuf);
+        assert.strictEqual(inBuf.length, outBuf.length);
         outBuf.forEach(function(v,i) {
-            assert.strictEqual(actual[i],v);
+            assert.strictEqual(inBuf[i],v);
         });
     });
 
@@ -72,10 +72,10 @@ describe("scrypt",function() {
             "4e9087cb33396a6873e8f9d2539a4b8e";
         let inBuf = Buffer.alloc(128, inString, 'hex');
         let outBuf = Buffer.alloc(128, outString, 'hex');
-        let actual = scrypt.roMix(1, inBuf, 4);
-        assert.strictEqual(actual.length, outBuf.length);
+        scrypt.roMix(1, inBuf, 4);
+        assert.strictEqual(inBuf.length, outBuf.length);
         outBuf.forEach(function(v,i) {
-            assert.strictEqual(actual[i],v);
+            assert.strictEqual(inBuf[i],v);
         });
     });
 
@@ -105,12 +105,13 @@ describe("scrypt",function() {
             "e61e85dc0d651e40dfcf017b45575887"
         );
 
+        // // This one takes a while
         // assert.strictEqual(
         //     scrypt.scrypt("pleaseletmein","SodiumChloride",20, 8, 1, 64).toString('hex'),
-        //     "77d6576238657b203b19ca42c18a0497" +
-        //     "f16b4844e3074ae8dfdffa3fede21442" +
-        //     "fcd0069ded0948f8326a753a0fc81f17" +
-        //     "e8d3e0fb2e0d3628cf35e20c38d18906"
+        //     "2101cb9b6a511aaeaddbbe09cf70f881" +
+        //     "ec568d574a2ffd4dabe5ee9820adaa47" +
+        //     "8e56fd8f4ba5d09ffa1c6d927c40f4c3" +
+        //     "37304049e8a952fbcbf45c6fa77a41a4"
         // );
 
     }, 10);

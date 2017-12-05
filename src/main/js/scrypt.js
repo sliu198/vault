@@ -58,11 +58,9 @@ exports.salsa = function(in_buf) {
             );
         });
     }
-    let out_buf = Buffer.alloc(64);
     for (let i = 0; i < 16; i++) {
-        out_buf.writeInt32LE((x.readUInt32LE(i * 4) + in_buf.readUInt32LE(i * 4)) << 0,i * 4);
+        in_buf.writeInt32LE((x.readUInt32LE(i * 4) + in_buf.readUInt32LE(i * 4)) << 0,i * 4);
     }
-    return out_buf;
 };
 
 exports.blockMix = function(r, B) {
@@ -70,17 +68,16 @@ exports.blockMix = function(r, B) {
     bmath.assert_buffer(B);
     assert.strictEqual(B.length, 128 * r);
 
-    let X = B.slice(64 * (2 * r - 1), 128 * r);
-    let Y = Buffer.alloc(128 * r);
+    let Y = Buffer.alloc(B.length, B);
+    let bPrev = B.length - 64;
     for (let i = 0; i < 2 * r; i++) {
-        let T = Buffer.alloc(64);
-        for (let j = 0; j < 64; j += 4) {
-            T.writeInt32LE(X.readInt32LE(j) ^ B.readInt32LE(64 * i + j),j)
+        let b = ((i & 1) * r + (i >> 1)) * 64;
+        for (let j = 0; j < 64; j++) {
+            B[b + j] = B[bPrev + j] ^ Y[64 * i + j];
         }
-        X = exports.salsa(T);
-        X.copy(Y, ((i & 1) * r + (i >> 1)) * 64);
+        exports.salsa(B.slice(b, b + 64));
+        bPrev = b;
     }
-    return Y;
 };
 
 exports.roMix = function(r, B, lN) {
@@ -95,22 +92,19 @@ exports.roMix = function(r, B, lN) {
 
     let N = Math.pow(2, lN);
     let V = Buffer.alloc(r * 128 * N);
-    let X = B;
 
     for (let i = 0; i < N; i++) {
-        X.copy(V, r * 128 * i);
-        X = exports.blockMix(r,X);
+        B.copy(V, r * 128 * i);
+        exports.blockMix(r,B);
     }
 
     for (let i = 0; i < N; i++) {
-        let j = X.readUInt32LE(r * 128 - 64) % N;
-        X.forEach(function(x, k) {
-            X[k] ^= V[r * 128 * j + k];
+        let j = B.readUInt32LE(r * 128 - 64) % N;
+        B.forEach(function(_, k) {
+            B[k] ^= V[r * 128 * j + k];
         });
-        X = exports.blockMix(r,X);
+        exports.blockMix(r,B);
     }
-
-    return X;
 };
 
 exports.scrypt = function(password, salt, lN, r, p, dkLen) {
@@ -123,11 +117,9 @@ exports.scrypt = function(password, salt, lN, r, p, dkLen) {
     assert(p <= 0xffffffff / (4 * r));
     assert(dkLen <= 0xffffffff * 32);
 
-    let N = Math.pow(2,lN);
-
     let B = crypto.pbkdf2Sync(password,salt,1,p * 128 * r,'sha256');
     for (let i = 0; i < p; i++) {
-        exports.roMix(r,B.slice(128 * r * i, 128 * r * (i + 1)),lN).copy(B,128 * r * i);
+        exports.roMix(r,B.slice(128 * r * i, 128 * r * (i + 1)),lN);
     }
     return crypto.pbkdf2Sync(password, B, 1, dkLen, 'sha256');
 };
