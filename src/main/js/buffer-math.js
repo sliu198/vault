@@ -14,7 +14,7 @@ let simplify = function(b) {
         return Buffer.alloc(1);
     }
     for (let i = b.length - 1; i >= 0; i--) {
-        if (b.readUInt8(i)) {
+        if (b[i]) {
             return b.slice(0,i + 1);
         }
     }
@@ -25,7 +25,7 @@ let add = function(buf, offset, x) {
     if (offset < 0 || offset >= buf.length) {
         throw new Error("Buffer offset out of bounds");
     }
-    let v = buf.readUInt8(offset) + x;
+    let v = buf[offset] + x;
     let q = Math.floor(v / 256);
     let r = v % 256;
     if (r < 0) {
@@ -34,7 +34,7 @@ let add = function(buf, offset, x) {
     if (q) {
         add(buf, offset + 1, q);
     }
-    buf.writeUInt8(r,offset);
+    buf[offset] = r;
 };
 
 exports.add = function(a,b) {
@@ -75,7 +75,7 @@ exports.sub = function(a,b) {
     let o = Buffer.alloc(al,a);
     try {
         for (let i = bl - 1; i >= 0; i--) {
-            add(o, i, -b.readUInt8(i))
+            add(o, i, -b[i]);
         }
         return simplify(o);
     } catch (e) {
@@ -95,20 +95,18 @@ exports.mul = function(a,b) {
 
     let o = Buffer.alloc(al + bl);
 
-    for (let i = 0; i < al; i++) {
-        let av = a.readUInt8(i);
-        for (let j = 0; j < bl; j++) {
-            let bv = b.readUInt8(j);
+    a.forEach(function(av, i) {
+        b.forEach(function(bv, j) {
             add(o, i + j, av * bv);
-        }
-    }
+        });
+    });
 
     return simplify(o);
 };
 
 exports.shiftLeft = function(a,b) {
     exports.assert_buffer(a);
-    assert(typeof b === 'number');
+    assert(Number.isSafeInteger(b));
 
     a = simplify(a);
 
@@ -124,8 +122,8 @@ exports.shiftLeft = function(a,b) {
     let o = Buffer.alloc(ol);
     let next = 0;
     for (let i = 0; i < ol; i++) {
-        let av = i < al ? a.readUInt8(al - i - 1) : 0;
-        o.writeUInt8(next | (av >> (8 - bits)), ol - i - 1);
+        let av = a[al - i - 1] || 0;
+        o[ol - i - 1] = next | (av >> (8 - bits));
         next = (av << bits) & 255;
     }
 
@@ -172,7 +170,7 @@ exports.exp_mod = function(a,b,n) {
 
     let o = Buffer.alloc(1,1);
     for (let i = 0; i < b.length; i++) {
-        let byte = b.readUInt8(i);
+        let byte = b[i];
         for (let j = 0; j < 8; j++) {
             if ((byte >> j) & 1) {
                 o = exports.mod(exports.mul(o,a),n);
