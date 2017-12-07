@@ -82,10 +82,10 @@ describe('srp', function() {
         );
     });
 
-    it('matching S', function() {
+    it('matching keys', function() {
         assert.strictEqual(
-            sjcl.codec.hex.fromBits(srp.makeServerS(new sjcl.bn(v), new sjcl.bn(A), new sjcl.bn(b), 1024, sjcl.hash.sha1).toBits()).toUpperCase(),
-            sjcl.codec.hex.fromBits(srp.makeClientS(new sjcl.bn(x), new sjcl.bn(a), new sjcl.bn(B), 1024, sjcl.hash.sha1).toBits()).toUpperCase()
+            sjcl.codec.hex.fromBits(srp.makeServerKey(new sjcl.bn(v), new sjcl.bn(A), new sjcl.bn(b), 1024, sjcl.hash.sha1)),
+            sjcl.codec.hex.fromBits(srp.makeClientKey(new sjcl.bn(x), new sjcl.bn(a), new sjcl.bn(B), 1024, sjcl.hash.sha1))
         );
     });
 });

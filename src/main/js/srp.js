@@ -50,7 +50,7 @@ let makeClientS = function(x, secretA, publicB, group, hash) {
 };
 
 let makeClientKey = function(x,secretA,publicB,group,hash) {
-    makeKey(makeClientS(x,secretA,publicB,group,hash),group,hash)
+    return makeKey(makeClientS(x,secretA,publicB,group,hash),group,hash)
 };
 
 let getGroupParams = function(group) {
