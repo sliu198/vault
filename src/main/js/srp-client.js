@@ -54,7 +54,7 @@ client.prototype.makeKey = function(P,s,B){
     if (!this.I || !this.a) {
         throw new Error("Must call initKeyExchange first");
     }
-    this.key = srp.makeClientKey(makeX(this.I,P,s,this.hash),this.a,B,this.group,this.hash);
+    this.key = srp.makeClientKey(makeX(this.I,P,s,this.hash),this.a,sjcl.bn.fromBits(B),this.group,this.hash);
     return this;
 };
 
