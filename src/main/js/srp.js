@@ -1,6 +1,5 @@
 "use strict";
-global.sjcl = require('sjcl');
-require('sjcl/core/scrypt');
+let utils = require('./utils');
 require('sjcl/core/bn');
 require('sjcl/core/srp');
 
@@ -61,31 +60,18 @@ let getGroupParams = function(group) {
     return groupParams;
 };
 
-let padArray = function(a, length) {
-    let bitLength = sjcl.bitArray.bitLength(a);
-    if (bitLength >= length) {
-        return a;
-    }
-    length -= bitLength;
-    let padding = new Array(Math.floor(length / 32)).fill(0);
-    if (length % 32) {
-        padding = sjcl.bitArray.concat(padding,sjcl.bitArray.partial(length % 32, 0));
-    }
-    return sjcl.bitArray.concat(padding,a);
-};
-
 let getK = function(group, hash) {
     hash = new (hash || sjcl.hash.sha256)();
     let groupParams = getGroupParams(group);
     hash.update(groupParams.N.toBits()); //no need to pad because by definition bitLength(N) === group
-    hash.update(padArray(groupParams.g.toBits(), group));
+    hash.update(utils.padArray(groupParams.g.toBits(), group));
     return sjcl.bn.fromBits(hash.finalize());
 };
 
 let makeU = function(publicA,publicB,group,hash) {
     hash = new (hash || sjcl.hash.sha256)();
-    hash.update(padArray(publicA.toBits(), group));
-    hash.update(padArray(publicB.toBits(), group));
+    hash.update(utils.padArray(publicA.toBits(), group));
+    hash.update(utils.padArray(publicB.toBits(), group));
     return sjcl.bn.fromBits(hash.finalize());
 };
 
@@ -95,15 +81,14 @@ let generateSecret = function(group) {
 
 let makeKey = function(S,group,hash) {
     hash = new (hash || sjcl.hash.sha256)();
-    hash.update(padArray(S.toBits(),group));
+    hash.update(utils.padArray(S.toBits(),group));
     return hash.finalize();
 };
 
 exports.makeV = makeV;
 exports.getK = getK;
-exports.generateSecretA = generateSecret;
+exports.generateSecret = generateSecret;
 exports.makePublicA = makePublicA;
-exports.generateSecretB = generateSecret;
 exports.makePublicB = makePublicB;
 exports.makeU = makeU;
 exports.makeClientS = makeClientS;
