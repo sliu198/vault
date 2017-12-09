@@ -1,5 +1,6 @@
 "use strict";
-let utils = require('./utils');
+require('./utils');
+require('sjcl/core/bn');
 require('sjcl/core/scrypt');
 let srp = require('./srp');
 
@@ -57,6 +58,26 @@ client.prototype.makeKey = function(P,s,B){
     return this;
 };
 
+client.prototype.getI = function() {
+    return this.I;
+};
+
+client.prototype.getS = function() {
+    return this.s;
+};
+
+client.prototype.getV = function() {
+    return this.v && this.v.toBits();
+};
+
+client.prototype.getA = function() {
+    return this.A && this.A.toBits();
+};
+
+client.prototype.getKey = function() {
+    return this.key;
+};
+
 client.prototype.reset = function() {
     delete this.I;
     delete this.s;
@@ -66,7 +87,5 @@ client.prototype.reset = function() {
     delete this.key;
     return this;
 };
-
-
 
 exports.client = client;
