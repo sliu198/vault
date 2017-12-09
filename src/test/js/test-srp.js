@@ -1,4 +1,5 @@
 let assert = require('assert');
+require('../../main/js/utils');
 let srp = require('../../main/js/srp');
 require('sjcl/core/sha1');
 
@@ -32,60 +33,74 @@ const S =
     "3499B200210DCC1F10EB33943CD67FC88A2F39A4BE5BEC4EC0A3212D" +
     "C346D7E474B29EDE8A469FFECA686E5A";
 
+const group = 1024;
+const hash = sjcl.hash.sha1;
+
 describe('srp', function() {
     it('getK', function() {
         assert.strictEqual(
-            sjcl.codec.hex.fromBits(srp.getK(1024, sjcl.hash.sha1).toBits()).toUpperCase(),
+            sjcl.codec.hex.fromBits(srp.getK(group, hash).toBits()).toUpperCase(),
             k
         );
     });
 
     it('makeU', function() {
         assert.strictEqual(
-            sjcl.codec.hex.fromBits(srp.makeU(new sjcl.bn(A), new sjcl.bn(B), 1024, sjcl.hash.sha1).toBits()).toUpperCase(),
+            sjcl.codec.hex.fromBits(srp.makeU(new sjcl.bn(A), new sjcl.bn(B), group, hash).toBits()).toUpperCase(),
             u
         );
     });
 
     it('makeV', function() {
         assert.strictEqual(
-            sjcl.codec.hex.fromBits(srp.makeV(new sjcl.bn(x), 1024).toBits()).toUpperCase(),
+            sjcl.codec.hex.fromBits(srp.makeV(new sjcl.bn(x), group).toBits()).toUpperCase(),
             v
         );
     });
 
     it('makeA', function() {
         assert.strictEqual(
-            sjcl.codec.hex.fromBits(srp.makePublicA(new sjcl.bn(a), 1024).toBits()).toUpperCase(),
+            sjcl.codec.hex.fromBits(srp.makePublicA(new sjcl.bn(a), group).toBits()).toUpperCase(),
             A
         );
     });
 
+    it('invalid secretA', function () {
+        //TODO: use sinon to test this
+    });
+
     it('makeClientS',function() {
         assert.strictEqual(
-            sjcl.codec.hex.fromBits(srp.makeClientS(new sjcl.bn(x), new sjcl.bn(a), new sjcl.bn(B), 1024, sjcl.hash.sha1).toBits()).toUpperCase(),
+            sjcl.codec.hex.fromBits(srp.makeClientS(new sjcl.bn(x), new sjcl.bn(a), new sjcl.bn(B), group, hash).toBits()).toUpperCase(),
             S
         );
     });
 
     it('makeB', function() {
         assert.strictEqual(
-            sjcl.codec.hex.fromBits(srp.makePublicB(new sjcl.bn(v),new sjcl.bn(b),1024,sjcl.hash.sha1).toBits()).toUpperCase(),
+            sjcl.codec.hex.fromBits(srp.makePublicB(new sjcl.bn(v),new sjcl.bn(b),group,hash).toBits()).toUpperCase(),
             B
         );
     });
 
     it('makeServerS',function() {
         assert.strictEqual(
-            sjcl.codec.hex.fromBits(srp.makeServerS(new sjcl.bn(v), new sjcl.bn(A), new sjcl.bn(b), 1024, sjcl.hash.sha1).toBits()).toUpperCase(),
+            sjcl.codec.hex.fromBits(srp.makeServerS(new sjcl.bn(v), new sjcl.bn(A), new sjcl.bn(b), group, hash).toBits()).toUpperCase(),
             S
+        );
+    });
+
+    it('makeServerS with bad publicA', function() {
+        assert.throws(
+            srp.makeServerS.bind(null, new sjcl.bn(v), new sjcl.bn(0), new sjcl.bn(b), group, hash),
+            Error
         );
     });
 
     it('matching keys', function() {
         assert.strictEqual(
-            sjcl.codec.hex.fromBits(srp.makeServerKey(new sjcl.bn(v), new sjcl.bn(A), new sjcl.bn(b), 1024, sjcl.hash.sha1)),
-            sjcl.codec.hex.fromBits(srp.makeClientKey(new sjcl.bn(x), new sjcl.bn(a), new sjcl.bn(B), 1024, sjcl.hash.sha1))
+            sjcl.codec.hex.fromBits(srp.makeServerKey(new sjcl.bn(v), new sjcl.bn(A), new sjcl.bn(b), group, hash)),
+            sjcl.codec.hex.fromBits(srp.makeClientKey(new sjcl.bn(x), new sjcl.bn(a), new sjcl.bn(B), group, hash))
         );
     });
 });

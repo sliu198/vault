@@ -1,7 +1,5 @@
 "use strict";
 require('./utils');
-require('sjcl/core/bn');
-require('sjcl/core/scrypt');
 let srp = require('./srp');
 
 let client = function(group, hash) {
@@ -9,8 +7,8 @@ let client = function(group, hash) {
     if (Object.getPrototypeOf(this) !== client.prototype) {
         throw new Error("SRP Client constructor must be called with 'new'");
     }
-    this.hash = hash | sjcl.hash.sha256;
-    this.group = group | 2048;
+    this.hash = hash || sjcl.hash.sha256;
+    this.group = group || 2048;
 
     //make sure values chosen are OK
     srp.getK(this.group, this.hash);
@@ -43,7 +41,7 @@ client.prototype.register = function(I, P) {
 client.prototype.initKeyExchange = function(I) {
     this.I = I;
     this.a = srp.generateSecret(this.group);
-    this.A = srp.makePublicA(this.a);
+    this.A = srp.makePublicA(this.a,this.group);
     delete this.s;
     delete this.v;
     delete this.key;

@@ -1,4 +1,7 @@
 global.sjcl = require('sjcl');
+require('sjcl/core/bn');
+require('sjcl/core/scrypt');
+require('sjcl/core/srp');
 
 let padArray = function(a, length) {
     let bitLength = sjcl.bitArray.bitLength(a);

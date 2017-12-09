@@ -1,7 +1,5 @@
 "use strict";
 let utils = require('./utils');
-require('sjcl/core/bn');
-require('sjcl/core/srp');
 
 let makePublicB = function(v, secretB, group, hash) {
     let groupParams = getGroupParams(group);
