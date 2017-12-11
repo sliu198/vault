@@ -3,8 +3,7 @@ require('./utils');
 let srp = require('./srp');
 
 let client = function(group, hash) {
-    //TODO: see if this is the best way to do this
-    if (Object.getPrototypeOf(this) !== client.prototype) {
+    if (!(this instanceof client)) {
         throw new Error("SRP Client constructor must be called with 'new'");
     }
     this.hash = hash || sjcl.hash.sha256;
@@ -31,7 +30,7 @@ let makeX = function(I,P,s,hash) {
 client.prototype.register = function(I, P) {
     this.I = I;
     this.s = sjcl.random.randomWords(8);
-    this.v = srp.makeV(makeX(I,P,this.s,this.hash),this.group);
+    this.v = srp.makeV(makeX(I,P,this.s,this.hash),this.group).toBits();
     delete this.a;
     delete this.A;
     delete this.key;
@@ -41,7 +40,7 @@ client.prototype.register = function(I, P) {
 client.prototype.initKeyExchange = function(I) {
     this.I = I;
     this.a = srp.generateSecret(this.group);
-    this.A = srp.makePublicA(this.a,this.group);
+    this.A = srp.makePublicA(this.a,this.group).toBits();
     delete this.s;
     delete this.v;
     delete this.key;
@@ -54,26 +53,6 @@ client.prototype.makeKey = function(P,s,B){
     }
     this.key = srp.makeClientKey(makeX(this.I,P,s,this.hash),this.a,sjcl.bn.fromBits(B),this.group,this.hash);
     return this;
-};
-
-client.prototype.getI = function() {
-    return this.I;
-};
-
-client.prototype.getS = function() {
-    return this.s;
-};
-
-client.prototype.getV = function() {
-    return this.v && this.v.toBits();
-};
-
-client.prototype.getA = function() {
-    return this.A && this.A.toBits();
-};
-
-client.prototype.getKey = function() {
-    return this.key;
 };
 
 client.prototype.reset = function() {

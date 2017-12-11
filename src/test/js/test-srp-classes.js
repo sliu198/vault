@@ -13,15 +13,15 @@ describe("client/server integration", function() {
         let I = sjcl.random.randomWords(8);
         let P = sjcl.random.randomWords(8);
 
-        let v = client.register(I,P).getV();
-        let s = client.getS();
+        let v = client.register(I,P).v;
+        let s = client.s;
 
-        let A = client.initKeyExchange(I).getA();
+        let A = client.initKeyExchange(I).A;
 
-        let serverKey = server.makeKey(v,A).getKey();
-        let B = server.getB();
+        let serverKey = server.makeKey(v,A).key;
+        let B = server.B;
 
-        let clientKey = client.makeKey(P,s,B).getKey();
+        let clientKey = client.makeKey(P,s,B).key;
 
         assert.equal(
             sjcl.codec.base64url.fromBits(serverKey),
