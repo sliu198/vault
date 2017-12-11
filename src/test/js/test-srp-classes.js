@@ -23,9 +23,21 @@ describe("client/server integration", function() {
 
         let clientKey = client.makeKey(P,s,B).key;
 
+        let serverKeyString = sjcl.codec.base64url.fromBits(serverKey);
+        let clientKeyString = sjcl.codec.base64url.fromBits(clientKey);
+
+        assert.notEqual(sjcl.codec.base64url.fromBits(I),'');
+        assert.notEqual(sjcl.codec.base64url.fromBits(P),'');
+        assert.notEqual(sjcl.codec.base64url.fromBits(v),'');
+        assert.notEqual(sjcl.codec.base64url.fromBits(s),'');
+        assert.notEqual(sjcl.codec.base64url.fromBits(A),'');
+        assert.notEqual(sjcl.codec.base64url.fromBits(B),'');
+        assert.notEqual(serverKeyString,'');
+        assert.notEqual(clientKeyString,'');
         assert.equal(
-            sjcl.codec.base64url.fromBits(serverKey),
-            sjcl.codec.base64url.fromBits(clientKey)
+            serverKeyString,
+            clientKeyString
         );
+
     });
 });
