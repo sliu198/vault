@@ -1,4 +1,5 @@
 let assert = require('assert');
+let sinon = require('sinon');
 require('../../main/js/utils');
 let srp = require('../../main/js/srp');
 require('sjcl/core/sha1');
@@ -66,7 +67,12 @@ describe('srp', function() {
     });
 
     it('invalid secretA', function () {
-        //TODO: use sinon to test this
+        let groupParams = sjcl.keyexchange.srp.knownGroup(group)
+        let stub = sinon.stub(groupParams.g,'powermod');
+        let badSecretA = 'badSecretA';
+        stub.withArgs('badSecretA', groupParams.N).returns(new sjcl.bn(0));
+        assert.throws(srp.makePublicA.bind(null,badSecretA,group),Error);
+        stub.reset();
     });
 
     it('makeClientS',function() {
