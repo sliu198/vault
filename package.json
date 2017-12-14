@@ -4,7 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "clean:npm": "rm -rf node_modules",
+    "clean:target": "rm -rf target",
+    "clean": "npm run clean:npm; npm run clean:target",
+    "generate-swagger": "node generate-swagger.js"
   },
   "author": "",
   "license": "ISC",

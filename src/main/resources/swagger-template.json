@@ -1,0 +1,699 @@
+  {
+    "swagger": "2.0",
+    "info": {
+      "description": "(Encrypted) file store using SRP authentication",
+      "title": "Vault",
+      "version": "0.1.0"
+    },
+    "schemes": [
+      "https"
+    ],
+    "x-amazon-apigateway-request-validators" : {
+      "body" : {
+        "validateRequestBody": true
+      }
+    },
+    "x-amazon-apigateway-request-validator" : "body",
+    "paths": {
+      "/user/register": {
+        "post": {
+          "summary": "Register a new user",
+          "consumes": ["application/json"],
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "in": "body",
+              "schema": {
+                "$ref": "#/definitions/UserRegisterRequest"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "schema": {
+                "$ref": "#/definitions/Empty"
+              }
+            },
+            "400": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          },
+          "x-amazon-apigateway-integration": {
+            "type": "aws_proxy",
+            "httpMethod": "POST",
+            "uri": "$LAMBDA_INT_ARN"
+          }
+        }
+      },
+      "/user/login": {
+        "post": {
+          "summary": "Initiate key exchange",
+          "consumes": ["application/json"],
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "in": "body",
+              "schema": {
+                "$ref": "#/definitions/UserLoginRequest"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "schema": {
+                "$ref": "#/definitions/UserLoginResponse"
+              }
+            },
+            "400": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          },
+          "x-amazon-apigateway-integration": {
+            "type": "aws_proxy",
+            "httpMethod": "POST",
+            "uri": "$LAMBDA_INT_ARN"
+          }
+        }
+      },
+      "/user/update": {
+        "post": {
+          "summary": "Update user info",
+          "consumes": ["application/json"],
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "in": "body",
+              "schema": {
+                "$ref": "#/definitions/UserUpdateRequest"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "schema": {
+                "$ref": "#/definitions/UserLogoutResponse"
+              }
+            },
+            "400": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          },
+          "x-amazon-apigateway-integration": {
+            "type": "aws_proxy",
+            "httpMethod": "POST",
+            "uri": "$LAMBDA_INT_ARN"
+          }
+        }
+      },
+      "/user/logout": {
+        "post": {
+          "summary": "Invalidate session(s)",
+          "consumes": ["application/json"],
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "in": "body",
+              "schema": {
+                "$ref": "#/definitions/UserLogoutRequest"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "schema": {
+                "$ref": "#/definitions/UserLogoutResponse"
+              }
+            },
+            "400": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          },
+          "x-amazon-apigateway-integration": {
+            "type": "aws_proxy",
+            "httpMethod": "POST",
+            "uri": "$LAMBDA_INT_ARN"
+          }
+        }
+      },
+      "/user/delete": {
+        "post": {
+          "summary": "Delete current user",
+          "consumes": ["application/json"],
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "in": "body",
+              "schema": {
+                "$ref": "#/definitions/UserDeleteRequest"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "schema": {
+                "$ref": "#/definitions/UserDeleteRequest"
+              }
+            },
+            "400": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          },
+          "x-amazon-apigateway-integration": {
+            "type": "aws_proxy",
+            "httpMethod": "POST",
+            "uri": "$LAMBDA_INT_ARN"
+          }
+        }
+      },
+      "/data/list": {
+        "post": {
+          "summary": "List data objects",
+          "consumes": ["application/json"],
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "in": "body",
+              "schema": {
+                "$ref": "#/definitions/DataListRequest"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "schema": {
+                "$ref": "#/definitions/DataListResponse"
+              }
+            },
+            "400": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          },
+          "x-amazon-apigateway-integration": {
+            "type": "aws_proxy",
+            "httpMethod": "POST",
+            "uri": "$LAMBDA_INT_ARN"
+          }
+        }
+      },
+      "/data/put": {
+        "post": {
+          "summary": "Add/update a data object",
+          "consumes": ["application/json"],
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "in": "body",
+              "schema": {
+                "$ref": "#/definitions/DataPutRequest"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "schema": {
+                "$ref": "#/definitions/DataPutResponse"
+              }
+            },
+            "400": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          },
+          "x-amazon-apigateway-integration": {
+            "type": "aws_proxy",
+            "httpMethod": "POST",
+            "uri": "$LAMBDA_INT_ARN"
+          }
+        }
+      },
+      "/data/get": {
+        "post": {
+          "summary": "Get a data object",
+          "consumes": ["application/json"],
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "in": "body",
+              "schema": {
+                "$ref": "#/definitions/DataGetRequest"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "schema": {
+                "$ref": "#/definitions/DataGetResponse"
+              }
+            },
+            "400": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          },
+          "x-amazon-apigateway-integration": {
+            "type": "aws_proxy",
+            "httpMethod": "POST",
+            "uri": "$LAMBDA_INT_ARN"
+          }
+        }
+      },
+      "/data/delete": {
+        "post": {
+          "summary": "Delete a data object",
+          "consumes": ["application/json"],
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "in": "body",
+              "schema": {
+                "$ref": "#/definitions/DataGetRequest"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "schema": {
+                "$ref": "#/definitions/DataDeleteResponse"
+              }
+            },
+            "400": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          },
+          "x-amazon-apigateway-integration": {
+            "type": "aws_proxy",
+            "httpMethod": "POST",
+            "uri": "$LAMBDA_INT_ARN"
+          }
+        }
+      }
+    },
+    "definitions": {
+      "Empty": {
+        "type": "object"
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "error message"
+          },
+          "n": {
+            "$ref": "#/definitions/I"
+          },
+          "h": {
+            "$ref": "#/definitions/h"
+          }
+        },
+        "required": ["message"]
+      },
+      "I": {
+        "type": "string",
+        "description": "username"
+      },
+      "C": {
+        "type": "string",
+        "description": "invitation code"
+      },
+      "s": {
+        "type": "string",
+        "description": "password salt"
+      },
+      "v": {
+        "type": "string",
+        "description": "password verifier"
+      },
+      "A": {
+        "type": "string",
+        "description": "client public key"
+      },
+      "B": {
+        "type": "string",
+        "description": "server public key"
+      },
+      "n": {
+        "type": "string",
+        "description": "server nonce"
+      },
+      "h": {
+        "type": "string",
+        "description": "HMAC"
+      },
+      "m": {
+        "type": "string",
+        "description": "client nonce"
+      },
+      "k": {
+        "type": "string",
+        "description": "object key"
+      },
+      "d": {
+        "type": "string",
+        "description": "object data"
+      },
+      "t": {
+        "type": "string",
+        "description": "object timestamp"
+      },
+      "UserRegisterRequest": {
+        "type": "object",
+        "properties": {
+          "I": {
+            "$ref": "#/definitions/I"
+          },
+          "C": {
+            "$ref": "#/definitions/C"
+          },
+          "s": {
+            "$ref": "#/definitions/s"
+          },
+          "v": {
+            "$ref": "#/definitions/v"
+          }
+        },
+        "required": ["I","C","s","v"]
+      },
+      "UserLoginRequest": {
+        "type": "object",
+        "properties": {
+          "I": {
+            "$ref": "#/definitions/I"
+          },
+          "A": {
+            "$ref": "#/definitions/A"
+          }
+        },
+        "required": ["I","A"]
+      },
+      "UserLoginResponse": {
+        "type": "object",
+        "properties": {
+          "B": {
+            "$ref": "#/definitions/B"
+          },
+          "s": {
+            "$ref": "#/definitions/s"
+          },
+          "n": {
+            "$ref": "#/definitions/n"
+          },
+          "h": {
+            "$ref": "#/definitions/h"
+          }
+        },
+        "required": ["B","s","n","h"]
+      },
+      "UserUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "I": {
+            "$ref": "#/definitions/I"
+          },
+          "A": {
+            "$ref": "#/definitions/A"
+          },
+          "s": {
+            "$ref": "#/definitions/s"
+          },
+          "v": {
+            "$ref": "#/definitions/v"
+          },
+          "n": {
+            "$ref": "#/definitions/n"
+          },
+          "m": {
+            "$ref": "#/definitions/m"
+          },
+          "h": {
+            "$ref": "#/definitions/h"
+          }
+        },
+        "required": ["I","A","s","v","n","h"]
+      },
+      "UserLogoutRequest": {
+        "type": "object",
+        "properties": {
+          "I": {
+            "$ref": "#/definitions/I"
+          },
+          "A": {
+            "$ref": "#/definitions/A"
+          },
+          "m": {
+            "$ref": "#/definitions/m"
+          }
+        },
+        "required": ["I"]
+      },
+      "UserLogoutResponse": {
+        "type": "object",
+        "properties": {
+          "m": {
+            "$ref": "#/definitions/m"
+          },
+          "h": {
+            "$ref": "#/definitions/h"
+          }
+        }
+      },
+      "UserDeleteRequest": {
+        "type": "object",
+        "properties": {
+          "I": {
+            "$ref": "#/definitions/I"
+          },
+          "A": {
+            "$ref": "#/definitions/A"
+          },
+          "m": {
+            "$ref": "#/definitions/m"
+          },
+          "n": {
+            "$ref": "#/definitions/n"
+          },
+          "h": {
+            "$ref": "#/definitions/h"
+          }
+        },
+        "required": ["I","A","n","h"]
+      },
+      "DataListRequest": {
+        "type": "object",
+        "properties": {
+          "I": {
+            "$ref": "#/definitions/I"
+          },
+          "A": {
+            "$ref": "#/definitions/A"
+          },
+          "m": {
+            "$ref": "#/definitions/m"
+          },
+          "n": {
+            "$ref": "#/definitions/n"
+          },
+          "h": {
+            "$ref": "#/definitions/h"
+          }
+        },
+        "required": ["I","A","n","h"]
+      },
+      "DataListResponse": {
+        "type": "object",
+        "properties": {
+          "l": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "k": {
+                  "$ref": "#/definitions/k"
+                },
+                "t": {
+                  "$ref": "#/definitions/t"
+                }
+              },
+              "required": ["k","t"]
+            }
+          },
+          "m": {
+            "$ref": "#/definitions/m"
+          },
+          "n": {
+            "$ref": "#/definitions/n"
+          },
+          "h": {
+            "$ref": "#/definitions/h"
+          }
+        },
+        "required": ["l","n"]
+      },
+      "DataPutRequest": {
+        "type": "object",
+        "properties": {
+          "I": {
+            "$ref": "#/definitions/I"
+          },
+          "A": {
+            "$ref": "#/definitions/A"
+          },
+          "k": {
+            "$ref": "#/definitions/k"
+          },
+          "d": {
+            "$ref": "#/definitions/d"
+          },
+          "m": {
+            "$ref": "#/definitions/m"
+          },
+          "n": {
+            "$ref": "#/definitions/n"
+          },
+          "h": {
+            "$ref": "#/definitions/h"
+          }
+        },
+        "required": ["I","A","k","d","n","h"]
+      },
+      "DataPutResponse": {
+        "type": "object",
+        "properties": {
+          "t": {
+            "$ref": "#/definitions/t"
+          },
+          "m": {
+            "$ref": "#/definitions/m"
+          },
+          "n": {
+            "$ref": "#/definitions/n"
+          },
+          "h": {
+            "$ref": "#/definitions/h"
+          }
+        },
+        "required": ["t","n"]
+      },
+      "DataGetRequest": {
+        "type": "object",
+        "properties": {
+          "I": {
+            "$ref": "#/definitions/I"
+          },
+          "A": {
+            "$ref": "#/definitions/A"
+          },
+          "k": {
+            "$ref": "#/definitions/k"
+          },
+          "m": {
+            "$ref": "#/definitions/m"
+          },
+          "n": {
+            "$ref": "#/definitions/n"
+          },
+          "h": {
+            "$ref": "#/definitions/h"
+          }
+        },
+        "required": ["I","A","k","n","h"]
+      },
+      "DataGetResponse": {
+        "type": "object",
+        "properties": {
+          "d": {
+            "$ref": "#/definitions/d"
+          },
+          "t": {
+            "$ref": "#/definitions/t"
+          },
+          "m": {
+            "$ref": "#/definitions/m"
+          },
+          "n": {
+            "$ref": "#/definitions/n"
+          },
+          "h": {
+            "$ref": "#/definitions/h"
+          }
+        },
+        "required": ["d","t","n"]
+      },
+      "DataDeleteResponse": {
+        "type": "object",
+        "properties": {
+          "m": {
+            "$ref": "#/definitions/m"
+          },
+          "n": {
+            "$ref": "#/definitions/n"
+          },
+          "h": {
+            "$ref": "#/definitions/h"
+          }
+        },
+        "required": ["n"]
+      }
+    }
+  }
