@@ -16,4 +16,45 @@ let padArray = function(a, length) {
     return sjcl.bitArray.concat(padding,a);
 };
 
+let stableStringify = function(o) {
+    o = o && o.valueOf();
+
+    if (typeof o !== 'object' || o === null) {
+        return JSON.stringify(o);
+    } else if (Object.getPrototypeOf(o) === Array.prototype) {
+        return '[' + new Array(o.length).fill().map(function(_,i) {
+            let v = stableStringify(o[i]);
+            return v === undefined ? "null" : v;
+        }).join(',') + ']';
+    } else {
+        return '{' + Object.keys(o).sort().map(function(k) {
+            let v = stableStringify(o[k]);
+            return v === undefined ? v : '\"' + k + '\":' + v;
+        }).filter(function(v) {
+            return v !== undefined;
+        }).join(',') + '}';
+    }
+};
+
 exports.padArray = padArray;
+exports.stableStringify = stableStringify;
+exports.bitsToString = function(bits) {
+    return sjcl.codec.base64url.fromBits(bits);
+};
+
+exports.stringToBits = function(string) {
+    if (!string.match(/^[-\w]*$/)) {
+        throw new Error("invalid base64url string")
+    }
+    return sjcl.codec.base64url.toBits(string);
+};
+
+exports.timeoutRequest = function(request, timeout) {
+    let t = setTimeout(function() {
+        request.abort();
+    }, timeout || 3000);
+    request.on('complete', function() {
+        clearTimeout(t);
+    });
+    return request.promise();
+};
