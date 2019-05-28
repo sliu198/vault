@@ -4,8 +4,23 @@ let utils = require('./utils');
 let constants = require('./constants');
 let srpServer = require('./srp-server');
 
+exports.dbRequest = function(fName, params, timeout) {
+    try {
+        let request = dynamodb[fName](params);
+        let t = setTimeout(function() {
+            request.abort();
+        }, timeout || 3000);
+        request.on('complete', function() {
+            clearTimeout(t);
+        });
+        return request.promise();
+    } catch (e) {
+        return Promise.reject(e);
+    }
+};
+
 exports.handler = function(event,context,callback) {
-    return new Promise(function(resolve,reject) {
+    return new Promise(function(resolve) {
         if (event.body.length > 1024) {
             return resolve(makeError(400, constants.ERROR_REQUEST_SIZE));
         }
@@ -40,6 +55,7 @@ exports.handler = function(event,context,callback) {
         callback(null, response);
     }, function(error) {
         if (error instanceof Error) {
+            console.error(error);
             error = makeError(500, constants.ERROR_INTERNAL_SERVER_ERROR);
         }
         callback(null, error);
@@ -63,17 +79,17 @@ let makeError = function(statusCode, message, n, m, k) {
 let makeResponse = function(statusCode, body) {
     return {
         statusCode: statusCode,
-        body: JSON.stringify(body)
+        body: utils.stableStringify(body)
     }
 };
 
-let makeHmac = function(body, k) {
+exports.makeHmac = function(body, k) {
     return utils.bitsToString(sjcl.misc.hmac(k,constants.SRP_HASH).encrypt(utils.stableStringify(body)));
 };
 
 let appendHmac = function(body, k) {
     if (k) {
-        body.h = makeHmac(body, k);
+        body.h = exports.makeHmac(body, k);
     }
     return body;
 };
@@ -82,7 +98,15 @@ let verifyHmac = function(body, k) {
     body = JSON.parse(JSON.stringify(body));
     let h = body.h;
     delete body.h;
-    return h === makeHmac(body, k);
+    return h === exports.makeHmac(body, k);
+};
+
+let getUserTable = function(dev) {
+    return "vault" + (dev ? "-dev" : "") + "-users";
+};
+
+let getSessionTable = function(dev) {
+    return "vault" + (dev ? "-dev" : "") + "-sessions";
 };
 
 let userRegister = function(request, dev) {
@@ -100,14 +124,13 @@ let userRegister = function(request, dev) {
     } catch (e) {
         throw makeError(400, constants.ERROR_I_INVALID);
     }
-    //Verify non-empty base64 > 0: v
+    //Verify non-empty base64 > 0: v mod N
     try {
-        let vNum = sjcl.bn.fromBits(utils.stringToBits(v));
+        let vNum = sjcl.bn.fromBits(utils.stringToBits(v)).mod(sjcl.keyexchange.srp.knownGroup(constants.SRP_GROUP).N);
         if (vNum.equals(new sjcl.bn(0))) {
             throw new Error();
         }
-        //reduce v if necessary for more efficient storage
-        v = utils.bitsToString(vNum.mod(sjcl.keyexchange.srp.knownGroup(constants.SRP_GROUP).N).toBits());
+        v = utils.bitsToString(vNum.toBits());
     } catch (e) {
         throw makeError(400, constants.ERROR_V_INVALID);
     }
@@ -116,10 +139,10 @@ let userRegister = function(request, dev) {
         throw makeError(400, constants.ERROR_S_EMPTY);
     }
 
-    let userTable = "vault" + (dev ? "-dev" : "") + "-users";
-    let sessionTable = "vault" + (dev ? "-dev" : "") + "-sessions";
+    let userTable = getUserTable(dev);
+    let sessionTable = getSessionTable(dev);
     //Verify that .*,C exists in session table
-    return utils.timeoutRequest(dynamodb.getItem({
+    return exports.dbRequest('getItem',{
         TableName: sessionTable,
         Key: {
             I: {
@@ -129,26 +152,26 @@ let userRegister = function(request, dev) {
                 S: C
             }
         }
-    })).then(function(result) {
+    }).then(function(result) {
         if (!result || !result.Item) {
             throw makeError(400, constants.ERROR_C_INVALID);
         }
         //Verify I does not exist in user table
-        return utils.timeoutRequest(dynamodb.getItem({
+        return exports.dbRequest('getItem',{
             TableName: userTable,
             Key: {
                 I: {
                     S: I
                 }
             }
-        }));
+        });
     }).then(function(result) {
         if (result && result.Item) {
             throw makeError(400, constants.ERROR_I_UNAVAILABLE);
         }
 
         //Insert I, s, v into user table
-        return utils.timeoutRequest(dynamodb.putItem({
+        return exports.dbRequest('putItem',{
             TableName: userTable,
             Item: {
                 I: {
@@ -161,11 +184,10 @@ let userRegister = function(request, dev) {
                     S: v
                 }
             }
-        }))
-
+        })
     }).then(function() {
         //Delete .*,C from session table
-        return utils.timeoutRequest(dynamodb.deleteItem({
+        return exports.dbRequest('deleteItem',{
             TableName: sessionTable,
             Key: {
                 I: {
@@ -175,7 +197,7 @@ let userRegister = function(request, dev) {
                     S: C
                 }
             }
-        })).catch(function(){
+        }).catch(function(){
             //not a critical error
             console.warn("Error deleting invitation code");
         });
@@ -185,7 +207,94 @@ let userRegister = function(request, dev) {
 };
 
 let userLogin = function(request, dev) {
-    return makeError(501, constants.ERROR_NOT_IMPLEMENTED);
+    //input I, A with correct types
+    let I = request.I;
+    let A = request.A;
+
+    //check empty I
+    if (I === '') {
+        throw makeError(400, constants.ERROR_I_EMPTY);
+    }
+
+    //check A mod N !== 0
+    try {
+        A = sjcl.bn.fromBits(utils.stringToBits(A)).mod(sjcl.keyexchange.srp.knownGroup(constants.SRP_GROUP).N);
+        if (A.equals(new sjcl.bn(0))) {
+            throw new Error();
+        }
+        A = A.toBits();
+    } catch (e) {
+        throw makeError(400, constants.ERROR_A_INVALID);
+    }
+
+    let userTable = getUserTable(dev);
+    let sessionTable = getSessionTable(dev);
+    let s,v,k,B,n;
+    //lookup I => s, v
+    return exports.dbRequest('getItem',{
+        TableName: userTable,
+        Key: {
+            I: {
+                S: I
+            }
+        }
+    }).then(function(user) {
+        if (!user || !user.Item) {
+            throw makeError(400, constants.ERROR_I_NOT_FOUND);
+        }
+        s = user.Item.s.S;
+        v = utils.stringToBits(user.Item.v.S);
+
+        //check A is not in use
+        return exports.dbRequest('getItem',{
+            TableName: sessionTable,
+            Key: {
+                I: {
+                    S: I
+                },
+                A: {
+                    S: A
+                }
+            }
+        });
+    }).then(function(result) {
+        if (result && result.Item && result.Item.t && result.Item.t.N > Date.now()) {
+            throw makeError(400, constants.ERROR_A_NOT_AVAILABLE);
+        }
+
+        let srp = new srpServer.server(constants.SRP_GROUP,constants.SRP_HASH);
+        k = srp.makeKey(v,A).key;
+        B = srp.B;
+        n = sjcl.random.randomWords(8);
+
+        //generate n, B; compute k; write I, A, k, n, t
+        return exports.dbRequest('putItem',{
+            TableName: sessionTable,
+            Item: {
+                I: {
+                    S:I
+                },
+                A: {
+                    S: utils.bitsToString(A)
+                },
+                k: {
+                    S: utils.bitsToString(k)
+                },
+                n: {
+                    S: utils.bitsToString(n)
+                },
+                t: {
+                    N: Date.now() + constants.SESSION_TIMEOUT
+                }
+            }
+        });
+    }).then(function() {
+        return makeResponse(200, appendHmac({
+            B: utils.bitsToString(B),
+            s: s,
+            n: utils.bitsToString(n)
+        }, k));
+    });
 };
 
 let userUpdate = function(request, dev) {

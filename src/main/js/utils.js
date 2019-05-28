@@ -48,13 +48,3 @@ exports.stringToBits = function(string) {
     }
     return sjcl.codec.base64url.toBits(string);
 };
-
-exports.timeoutRequest = function(request, timeout) {
-    let t = setTimeout(function() {
-        request.abort();
-    }, timeout || 3000);
-    request.on('complete', function() {
-        clearTimeout(t);
-    });
-    return request.promise();
-};

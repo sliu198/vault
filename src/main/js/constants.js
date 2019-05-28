@@ -1,12 +1,16 @@
 require('./utils');
 exports.SRP_GROUP = 2048;
 exports.SRP_HASH = sjcl.hash.sha256;
+exports.SESSION_TIMEOUT = 600000;
 exports.ERROR_REQUEST_SIZE = "Request exceeds maximum size";
 exports.ERROR_NOT_IMPLEMENTED = "Not Implemented";
 exports.ERROR_INTERNAL_SERVER_ERROR = "Internal Server Error";
 exports.ERROR_I_EMPTY = "'I' must not be empty";
 exports.ERROR_I_INVALID = "'I' must contain only upper and lower case letters, numbers, '-', and '_'";
 exports.ERROR_I_UNAVAILABLE = "Username not available";
+exports.ERROR_I_NOT_FOUND = "User does not exist";
 exports.ERROR_C_INVALID = "Invalid invitation code";
-exports.ERROR_V_INVALID = "'v' must be an unpadded base64url encoded, non-zero, big-endian integer";
+exports.ERROR_V_INVALID = "'v' must be an unpadded base64url encoded, non-zero (mod N), big-endian integer";
 exports.ERROR_S_EMPTY = "'s' must not be empty";
+exports.ERROR_A_INVALID = "'A' must be an unpadded base64url encoded, non-zero (mod N), big-endian integer";
+exports.ERROR_A_NOT_AVAILABLE = "Value for 'A' already in use";

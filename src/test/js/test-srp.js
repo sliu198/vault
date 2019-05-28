@@ -67,7 +67,7 @@ describe('srp', function() {
     });
 
     it('invalid secretA', function () {
-        let groupParams = sjcl.keyexchange.srp.knownGroup(group)
+        let groupParams = sjcl.keyexchange.srp.knownGroup(group);
         let stub = sinon.stub(groupParams.g,'powermod');
         let badSecretA = 'badSecretA';
         stub.withArgs('badSecretA', groupParams.N).returns(new sjcl.bn(0));
